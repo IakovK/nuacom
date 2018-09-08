@@ -36,18 +36,10 @@ typedef struct _DRVLINE
 
     LINEEVENT               pfnEventProc;
 
-	// 
-	// MSP Variables
+	DWORD                   dwDeviceID;
 
-	DWORD				    dwMSPHandle;
-	
-    HTAPIMSPLINE			htMSPLineHandle;
-
-	//
-
-    DWORD                   dwDeviceID;
-
-    char                    szComm[8];
+#if 0
+	char                    szComm[8];
 
     HTAPICALL               htCall;
 
@@ -62,6 +54,7 @@ typedef struct _DRVLINE
     BOOL                    bDropInProgress;
 
     OVERLAPPED              Overlapped;
+#endif
 
 } DRVLINE, FAR *PDRVLINE;
 
@@ -118,11 +111,8 @@ typedef struct _FUNC_INFO
 } FUNC_INFO, *PFUNC_INFO;
 
 
-#if 0
-DWORD               gdwLineDeviceIDBase;
-DWORD               gdwPermanentProviderID;
-ASYNC_COMPLETION    gpfnCompletionProc;
-#endif
+extern DWORD gdwLineDeviceIDBase;
+extern ASYNC_COMPLETION gpfnCompletionProc;
 
 extern char gszRegKey[];
 #if 0

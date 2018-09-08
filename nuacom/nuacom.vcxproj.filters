@@ -41,6 +41,9 @@
     <ClCompile Include="globals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="auxfuncs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="nuacom.rc">

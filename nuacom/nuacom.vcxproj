@@ -163,6 +163,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="auxfuncs.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="globals.cpp" />
     <ClCompile Include="nuacom.cpp" />

@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #pragma comment(lib, "tapi32")
 
 void TestInstall(int ac, char *av[])
@@ -76,7 +77,9 @@ public:
 	};
 	struct lineDesc
 	{
+		DWORD lineId;
 		DWORD dwAPIVersion;
+		std::string lineName;
 	};
 	using ProvidersList = std::vector<provDesc>;
 	using LinesList = std::vector<lineDesc>;
@@ -129,7 +132,6 @@ public:
 			printf("GetLineInfo: lineNum = %d, lineGetDevCaps(1) failed: %08x\n", lineNum, n);
 			return false;
 		}
-		printf("GetLineInfo: lineNum = %d, lineGetDevCaps(1) returned: ldc.dwNeededSize = %d\n", lineNum, ldc.dwNeededSize);
 		std::vector<unsigned char> v(ldc.dwNeededSize);
 		LPLINEDEVCAPS ldc2 = (LPLINEDEVCAPS)v.data();
 		ldc2->dwTotalSize = ldc.dwNeededSize;
@@ -139,14 +141,13 @@ public:
 			printf("GetLineInfo: lineNum = %d, lineGetDevCaps(2) failed: %08x\n", lineNum, n);
 			return false;
 		}
-		printf("GetLineInfo: lineNum = %d, dwLineNameOffset = %d, dwLineNameSize = %d\n", lineNum, ldc2->dwLineNameOffset, ldc2->dwLineNameSize);
 		std::string lineName((char*)v.data() + ldc2->dwLineNameOffset, ldc2->dwLineNameSize);
-		printf("GetLineInfo: lineName = %s\n", lineName.c_str());
+		ld.lineId = lineNum;
+		ld.lineName = lineName;
 		return true;
 	}
 	LinesList GetLinesList()
 	{
-		printf("GetLinesList: m_numDevs = %d\n", m_numDevs);
 		LinesList retVal;
 		for (int j = 0; j < m_numDevs; j++)
 		{
@@ -156,10 +157,28 @@ public:
 		}
 		return retVal;
 	}
-	void dial(int providerId, const char *number)
+	void dial(int deviceId, const char *number)
 	{
-		printf("dial: providerId = %d, number = %s\n", providerId, number);
-		//lineOpen(m_appHandle, 
+		printf("dial: deviceId = %d, number = %s\n", deviceId, number);
+		LinesList l = GetLinesList();
+		auto it = std::find_if(std::begin(l), std::end(l), [=](const lineDesc& ld)
+		{
+			return ld.lineId == deviceId;
+		});
+		if (it == std::end(l))
+		{
+			printf("linedesc not found\n");
+			return;
+		}
+		HLINE lineHandle;
+		auto n = lineOpen(m_appHandle, deviceId, &lineHandle, it->dwAPIVersion, 0, (DWORD_PTR)this,
+			LINECALLPRIVILEGE_OWNER, LINEMEDIAMODE_UNKNOWN, NULL);
+		printf("dial: lineOpen returned: %08x\n", n);
+		if (n == 0)
+		{
+			n = lineClose(lineHandle);
+			printf("dial: lineClose returned: %08x\n", n);
+		}
 	}
 };
 
@@ -204,13 +223,11 @@ void TestGetLinesList(int ac, char *av[])
 	DialTester dt;
 	DialTester::LinesList l = dt.GetLinesList();
 	printf("l.size() = %zd\n", l.size());
-#if 0
-	printf("Id\tName\n");
-	for (int j = 0; j < p.size(); j++)
+	printf("lineId\tAPIVersion\tName\n");
+	for (int j = 0; j < l.size(); j++)
 	{
-		printf("%d\t%s\n", p[j].providerId, p[j].providerName.c_str());
+		printf("%d\t%08x\t%s\n", l[j].lineId, l[j].dwAPIVersion, l[j].lineName.c_str());
 	}
-#endif
 }
 
 int main(int ac, char *av[])
