@@ -73,6 +73,5 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="nuacom.reg" />
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>
