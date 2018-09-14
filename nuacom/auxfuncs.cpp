@@ -46,18 +46,6 @@ TSPI_lineBlindTransfer(
 
 LONG
 TSPIAPI
-TSPI_lineCloseCall(
-	HDRVCALL            hdCall
-)
-{
-	DBGOUT((3, "TSPI_lineCloseCall"));
-	LONG        lResult = LINEERR_OPERATIONFAILED;
-
-	return lResult;
-}
-
-LONG
-TSPIAPI
 TSPI_lineCompleteCall(
 	DRV_REQUESTID       dwRequestID,
 	HDRVCALL            hdCall,

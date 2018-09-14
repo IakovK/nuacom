@@ -1,0 +1,15 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Nuacom\TSP]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Nuacom\TSP\Lines]
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Nuacom\TSP\Lines\0]
+"extension"="10"
+"username"="iakov.kaabak@upwork.com"
+"password"="iakov.kaabak@upwork.com"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Nuacom\TSP\Lines\1]
+"extension"="11"
+"username"="iakov.kaabak@upwork.com"
+"password"="iakov.kaabak@upwork.com"

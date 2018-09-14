@@ -174,11 +174,68 @@ public:
 		auto n = lineOpen(m_appHandle, deviceId, &lineHandle, it->dwAPIVersion, 0, (DWORD_PTR)this,
 			LINECALLPRIVILEGE_OWNER, LINEMEDIAMODE_UNKNOWN, NULL);
 		printf("dial: lineOpen returned: %08x\n", n);
-		if (n == 0)
+		if (n != 0)
+			return;
+
+		HCALL callHandle;
+		n = lineMakeCall(lineHandle, &callHandle, number, 0, NULL);
+		printf("dial: lineMakeCall returned: %08x\n", n);
+		if (n > 0)
+			RunMessageLoop();
+		n = lineClose(lineHandle);
+		printf("dial: lineClose returned: %08x\n", n);
+	}
+	void RunMessageLoop()
+	{
+		printf("RunMessageLoop: entry\n");
+		LINEMESSAGE msg;
+		while (true)
 		{
-			n = lineClose(lineHandle);
-			printf("dial: lineClose returned: %08x\n", n);
+			int n = lineGetMessage(m_appHandle, &msg, 10 * 1000);
+			printf("RunMessageLoop: lineGetMessage returned: %08x\n", n);
+			if (n < 0)
+				return;
+			printf("RunMessageLoop: msg.dwMessageID = %s\n", MessageIdToText(msg.dwMessageID));
+			switch (msg.dwMessageID)
+			{
+			case LINE_REPLY:
+				printf("RunMessageLoop: request id = %08x, result code = %08x\n", msg.dwParam1, msg.dwParam2);
+				break;
+			}
 		}
+	}
+	const char *MessageIdToText(int dwMessageID)
+	{
+		static char s[100];
+#define CASE_TEXT(n) case n: return #n;
+		switch (dwMessageID)
+		{
+		default:
+			sprintf(s, "Unknown: %d", dwMessageID);
+			return s;
+
+CASE_TEXT(LINE_CALLINFO)
+CASE_TEXT(LINE_CALLSTATE)
+CASE_TEXT(LINE_CLOSE)
+CASE_TEXT(LINE_DEVSPECIFIC)
+CASE_TEXT(LINE_DEVSPECIFICFEATURE)
+CASE_TEXT(LINE_GATHERDIGITS)
+CASE_TEXT(LINE_GENERATE)
+CASE_TEXT(LINE_LINEDEVSTATE)
+CASE_TEXT(LINE_MONITORDIGITS)
+CASE_TEXT(LINE_MONITORMEDIA)
+CASE_TEXT(LINE_MONITORTONE)
+CASE_TEXT(LINE_REPLY)
+CASE_TEXT(LINE_REQUEST)
+CASE_TEXT(PHONE_BUTTON)
+CASE_TEXT(PHONE_CLOSE)
+CASE_TEXT(PHONE_DEVSPECIFIC)
+CASE_TEXT(PHONE_REPLY)
+CASE_TEXT(PHONE_STATE)
+CASE_TEXT(LINE_CREATE)
+CASE_TEXT(PHONE_CREATE)
+		}
+#undef CASE_TEXT
 	}
 };
 
@@ -187,7 +244,7 @@ void TestDial(int ac, char *av[])
 	printf("TestDial\n");
 	if (ac < 4)
 	{
-		printf("usage: testapp.exe dial <provider id> <number>\n");
+		printf("usage: testapp.exe dial <device id> <number>\n");
 		return;
 	}
 	std::string idStr = av[2];
@@ -196,7 +253,7 @@ void TestDial(int ac, char *av[])
 	int providerId;
 	s >> providerId;
 	DialTester dt;
-	dt.dial(providerId, "123");
+	dt.dial(providerId, numToDial.c_str());
 	printf("TestDial exit\n");
 }
 
@@ -251,5 +308,10 @@ int main(int ac, char *av[])
 		TestGetProvidersList(ac, av);
 	else if (command == "getlineslist")
 		TestGetLinesList(ac, av);
+	else
+	{
+		printf("invalid command\n");
+		printf("commands: install, uninstall, dial, answer, getprovlist, getlineslist\n");
+	}
 	return 0;
 }

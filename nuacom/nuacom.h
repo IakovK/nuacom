@@ -38,22 +38,28 @@ typedef struct _DRVLINE
 
 	DWORD                   dwDeviceID;
 
+	std::string session_token;
+	std::string extension;
 #if 0
 	char                    szComm[8];
+#endif
 
-    HTAPICALL               htCall;
+	HTAPICALL               htCall;
 
-    DWORD                   dwCallState;
+	DWORD                   dwCallState;
 
     DWORD                   dwCallStateMode;
 
     DWORD                   dwMediaMode;
 
-    HANDLE                  hComm;
+#if 0
+	HANDLE                  hComm;
+#endif
 
     BOOL                    bDropInProgress;
 
-    OVERLAPPED              Overlapped;
+#if 0
+	OVERLAPPED              Overlapped;
 #endif
 
 } DRVLINE, FAR *PDRVLINE;
@@ -81,44 +87,8 @@ typedef struct _ASYNC_REQUEST
 } ASYNC_REQUEST, *PASYNC_REQUEST;
 
 
-#if DBG
-
-typedef struct _FUNC_PARAM
-{
-    char        *lpszVal;
-
-    DWORD       dwVal;
-
-} FUNC_PARAM, *PFUNC_PARAM;
-
-#endif
-
-typedef struct _FUNC_INFO
-{
-
-#if DBG
-
-    char        *lpszFuncName;
-
-    DWORD       dwNumParams;
-
-    PFUNC_PARAM aParams;
-
-#endif
-
-    LONG        lResult;
-
-} FUNC_INFO, *PFUNC_INFO;
-
-
 extern DWORD gdwLineDeviceIDBase;
 extern ASYNC_COMPLETION gpfnCompletionProc;
-
-extern char gszRegKey[];
-#if 0
-char gszNumLines[]     = "NumLines";
-char gszDefLineConfigParams[] = "my new line,COM1,L0";
-#endif
 
 #if DBG
 
