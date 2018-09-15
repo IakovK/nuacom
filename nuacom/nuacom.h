@@ -89,11 +89,11 @@ typedef struct _ASYNC_REQUEST
 
 extern DWORD gdwLineDeviceIDBase;
 extern ASYNC_COMPLETION gpfnCompletionProc;
+extern HMODULE hInst;
 
 #if DBG
 
 extern DWORD gdwDebugLevel;
-extern HMODULE hInst;
 
 void
 CDECL
