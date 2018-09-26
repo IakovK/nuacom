@@ -13,6 +13,7 @@ Notes:
 
 #include "resource.h"
 #include <initguid.h> 
+#include "..\WebsocketAPI\websocketapi.h"
 
 
 //                                                                      
@@ -30,6 +31,14 @@ DEFINE_GUID(CLSID_SAMPMSP,
 #define  ATSP_TIMEOUT           60000   // milliseconds
 
 
+class TapiCallbacks : public ICallbacks
+{
+public:
+	virtual void OnOpenListener();
+	virtual void OnFailListener();
+	virtual void ProcessMessage(IMessageHolder *pmh);
+};
+
 typedef struct _DRVLINE
 {
     HTAPILINE               htLine;
@@ -40,9 +49,8 @@ typedef struct _DRVLINE
 
 	std::string session_token;
 	std::string extension;
-#if 0
-	char                    szComm[8];
-#endif
+	TapiCallbacks tc;
+	void *socketHandle;
 
 	HTAPICALL               htCall;
 
@@ -52,15 +60,7 @@ typedef struct _DRVLINE
 
     DWORD                   dwMediaMode;
 
-#if 0
-	HANDLE                  hComm;
-#endif
-
     BOOL                    bDropInProgress;
-
-#if 0
-	OVERLAPPED              Overlapped;
-#endif
 
 } DRVLINE, FAR *PDRVLINE;
 

@@ -202,6 +202,11 @@
     <None Include="nuacom.def" />
     <None Include="nuacom.reg" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WebsocketAPI\WebsocketAPI.vcxproj">
+      <Project>{49f40cfb-406f-4228-80fd-f01e3c9d6dca}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
