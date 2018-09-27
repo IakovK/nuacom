@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <string>
-#pragma comment(lib, "libcurl.dll.a")
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <curl/curl.h>

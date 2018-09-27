@@ -6,7 +6,6 @@
 #include <cvt/wstring>
 #include <codecvt>
 
-#pragma comment(lib, "libcurl.dll.a")
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <curl/curl.h>
