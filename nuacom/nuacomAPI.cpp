@@ -3,9 +3,6 @@
 #include "nuacomAPI.h"
 #include "md5.h"
 
-#include <cvt/wstring>
-#include <codecvt>
-
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <curl/curl.h>
@@ -167,3 +164,43 @@ bool GetSessionToken(const std::string &name, const std::string &pass, std::stri
 	}
 }
 
+bool EndCall(const std::string &session_token, const std::string &channel_id, std::string &status_message)
+{
+	// send request
+	CURL *hnd = curl_easy_init();
+
+	std::string url = "https://call-events.nuacom.ie/call/terminate/SIP/" + channel_id;
+
+	DBGOUT((3, "EndCall: url = %s\n", url.c_str()));
+	curl_easy_setopt(hnd, CURLOPT_URL, url.c_str());
+
+	struct curl_slist *headers = NULL;
+	std::string securityHeader = "Client-Security-Token: " + session_token;
+	headers = curl_slist_append(headers, "Cache-Control: no-cache");
+	headers = curl_slist_append(headers, securityHeader.c_str());
+	curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
+
+	curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_data);
+	std::string result;
+	curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &result);
+	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0);
+	char errMsgBuf[CURL_ERROR_SIZE];
+	errMsgBuf[0] = 0;
+	curl_easy_setopt(hnd, CURLOPT_ERRORBUFFER, errMsgBuf);
+
+	CURLcode ret = curl_easy_perform(hnd);
+	DBGOUT((3, "EndCall: curl_easy_perform returned: %d\n", ret));
+	curl_easy_cleanup(hnd);
+	if (ret == CURLE_OK)
+	{
+		DBGOUT((3, "EndCall: result is: %s\n", result.c_str()));
+		status_message = result;
+		return true;
+	}
+	else
+	{
+		status_message = errMsgBuf;
+		return false;
+	}
+}

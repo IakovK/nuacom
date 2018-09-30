@@ -167,7 +167,7 @@ public:
 		});
 		if (it == std::end(l))
 		{
-			printf("linedesc not found\n");
+			printf("dial: linedesc not found\n");
 			return;
 		}
 		HLINE lineHandle;
@@ -184,6 +184,30 @@ public:
 			RunMessageLoop();
 		n = lineClose(lineHandle);
 		printf("dial: lineClose returned: %08x\n", n);
+	}
+	void answer(int deviceId)
+	{
+		printf("answer: deviceId = %d\n", deviceId);
+		LinesList l = GetLinesList();
+		auto it = std::find_if(std::begin(l), std::end(l), [=](const lineDesc& ld)
+		{
+			return ld.lineId == deviceId;
+		});
+		if (it == std::end(l))
+		{
+			printf("answer: linedesc not found\n");
+			return;
+		}
+		HLINE lineHandle;
+		auto n = lineOpen(m_appHandle, deviceId, &lineHandle, it->dwAPIVersion, 0, (DWORD_PTR)this,
+			LINECALLPRIVILEGE_OWNER, LINEMEDIAMODE_UNKNOWN, NULL);
+		printf("answer: lineOpen returned: %08x\n", n);
+		if (n != 0)
+			return;
+
+		RunMessageLoop();
+		n = lineClose(lineHandle);
+		printf("answer: lineClose returned: %08x\n", n);
 	}
 	void RunMessageLoop()
 	{
@@ -203,6 +227,7 @@ public:
 				break;
 			}
 		}
+		printf("RunMessageLoop: exit\n");
 	}
 	const char *MessageIdToText(int dwMessageID)
 	{
@@ -260,6 +285,18 @@ void TestDial(int ac, char *av[])
 void TestAnswer(int ac, char *av[])
 {
 	printf("TestAnswer\n");
+	if (ac < 4)
+	{
+		printf("usage: testapp.exe answer <device id>\n");
+		return;
+	}
+	std::string idStr = av[2];
+	std::stringstream s(idStr);
+	int providerId;
+	s >> providerId;
+	DialTester dt;
+	dt.answer(providerId);
+	printf("TestAnswer exit\n");
 }
 
 void TestGetProvidersList(int ac, char *av[])

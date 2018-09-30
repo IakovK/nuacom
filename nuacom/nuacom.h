@@ -31,17 +31,16 @@ DEFINE_GUID(CLSID_SAMPMSP,
 #define  ATSP_TIMEOUT           60000   // milliseconds
 
 
-class TapiCallbacks : public ICallbacks
+class DRVLINE : public ICallbacks
 {
 public:
 	virtual void OnOpenListener();
 	virtual void OnFailListener();
 	virtual void ProcessMessage(IMessageHolder *pmh);
-};
-
-typedef struct _DRVLINE
-{
-    HTAPILINE               htLine;
+	void ProcessObjectMessage(const std::map<std::string, IMessageHolder*> &msg);
+	void ProcessCallMessage(const std::string &msgId, const std::map<std::string, IMessageHolder*> &msg);
+	
+	HTAPILINE               htLine;
 
     LINEEVENT               pfnEventProc;
 
@@ -49,7 +48,8 @@ typedef struct _DRVLINE
 
 	std::string session_token;
 	std::string extension;
-	TapiCallbacks tc;
+	std::string destAddress;
+	std::string localChannel;
 	void *socketHandle;
 
 	HTAPICALL               htCall;
@@ -62,7 +62,20 @@ typedef struct _DRVLINE
 
     BOOL                    bDropInProgress;
 
-} DRVLINE, FAR *PDRVLINE;
+	DRVLINE()
+		:htLine(NULL)
+		, pfnEventProc(NULL)
+		, dwDeviceID(0)
+		, socketHandle(NULL)
+		, htCall(NULL)
+		, dwCallState(0)
+		, dwCallStateMode(0)
+		, dwMediaMode(0)
+		, bDropInProgress(FALSE)
+	{
+	}
+};
+typedef DRVLINE FAR *PDRVLINE;
 
 
 typedef struct _DRVLINECONFIG
