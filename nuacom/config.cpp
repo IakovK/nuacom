@@ -3,6 +3,7 @@
 #include "config.h"
 
 char  szAtsp32DebugLevel[] = "DebugLevel";
+char  szIncomingFlag[] = "HandleIncomingCalls";
 char  szRegKey[] = "Software\\Nuacom\\TSP";
 char  szLinesRegKey[] = "Software\\Nuacom\\TSP\\Lines";
 
@@ -35,6 +36,43 @@ void GetDebugLevel()
 	RegCloseKey(hKey);
 }
 #endif
+
+void GetIncomingFlag()
+{
+	HKEY  hKey;
+	DWORD dwDataSize, dwDataType;
+
+	auto n = RegOpenKeyEx(
+		HKEY_LOCAL_MACHINE,
+		szRegKey,
+		0,
+		KEY_READ,
+		&hKey
+	);
+
+	dwDataSize = sizeof(DWORD);
+	gbHandleIncomingCalls = FALSE;
+
+	n = RegQueryValueEx(
+		hKey,
+		szIncomingFlag,
+		0,
+		&dwDataType,
+		(LPBYTE)&gbHandleIncomingCalls,
+		&dwDataSize
+	);
+
+	RegCloseKey(hKey);
+}
+
+void GetConfig()
+{
+#if DBG
+	GetDebugLevel();
+#endif
+	GetIncomingFlag();
+	DBGOUT((3, "GetConfig: gbHandleIncomingCalls = %d", gbHandleIncomingCalls));
+}
 
 linesCollection GetLinesInfo()
 {

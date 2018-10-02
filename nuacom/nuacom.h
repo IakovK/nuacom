@@ -39,7 +39,9 @@ public:
 	virtual void ProcessMessage(IMessageHolder *pmh);
 	void ProcessObjectMessage(const std::map<std::string, IMessageHolder*> &msg);
 	void ProcessCallMessage(const std::string &msgId, const std::map<std::string, IMessageHolder*> &msg);
-	
+	bool shouldProcessIncomingCalls(const std::string &callDirection);
+	DWORD CalculateCallInfoSize();
+
 	HTAPILINE               htLine;
 
     LINEEVENT               pfnEventProc;
@@ -61,6 +63,9 @@ public:
     DWORD                   dwMediaMode;
 
     BOOL                    bDropInProgress;
+	BOOL incomingCall;
+	std::mutex mtx;
+	std::map<std::string, std::string> msgData;
 
 	DRVLINE()
 		:htLine(NULL)
@@ -72,6 +77,7 @@ public:
 		, dwCallStateMode(0)
 		, dwMediaMode(0)
 		, bDropInProgress(FALSE)
+		, incomingCall(FALSE)
 	{
 	}
 };
@@ -103,6 +109,7 @@ typedef struct _ASYNC_REQUEST
 extern DWORD gdwLineDeviceIDBase;
 extern ASYNC_COMPLETION gpfnCompletionProc;
 extern HMODULE hInst;
+extern BOOL gbHandleIncomingCalls;
 
 #if DBG
 

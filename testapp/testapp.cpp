@@ -181,7 +181,7 @@ public:
 		n = lineMakeCall(lineHandle, &callHandle, number, 0, NULL);
 		printf("dial: lineMakeCall returned: %08x\n", n);
 		if (n > 0)
-			RunMessageLoop();
+			RunMessageLoop(300);
 		n = lineClose(lineHandle);
 		printf("dial: lineClose returned: %08x\n", n);
 	}
@@ -205,17 +205,79 @@ public:
 		if (n != 0)
 			return;
 
-		RunMessageLoop();
+		RunMessageLoop(300);
 		n = lineClose(lineHandle);
 		printf("answer: lineClose returned: %08x\n", n);
 	}
-	void RunMessageLoop()
+	LONG GetCallInfo(HCALL hCall, std::vector<std::uint8_t> &v)
+	{
+		printf("GetCallInfo: entry\n");
+		LINECALLINFO lci{ 0 };
+		lci.dwTotalSize = lci.dwUsedSize = lci.dwNeededSize = sizeof(LINECALLINFO);
+		long l = lineGetCallInfo(hCall, &lci);
+		printf("GetCallInfo: lineGetCallInfo returned: lci.dwNeededSize = %d, l = %08x\n", lci.dwNeededSize, l);
+		if (lci.dwNeededSize == 0)
+			return LINEERR_OPERATIONFAILED;
+		v.assign(lci.dwNeededSize, 0);
+		printf("GetCallInfo: after v.assign: v.size() = %d\n", v.size());
+		LPLINECALLINFO plci = (LPLINECALLINFO)v.data();
+		plci->dwTotalSize = plci->dwUsedSize = plci->dwNeededSize = v.size();
+		printf("GetCallInfo: plci = %p\n", plci);
+		l = lineGetCallInfo(hCall, plci);
+		return l;
+	}
+
+	void PrintString(const char *name, int size, int offset, LINECALLINFO *lci)
+	{
+		if (offset == 0)
+			return;
+		char *p = (char*)lci + offset;
+		std::string s(p, size);
+		printf("%s = \"%s\"\n", name, s.c_str());
+	}
+
+	void DumpCallInfo(LINECALLINFO *lci)
+	{
+#define PRINT_INT(x) printf(#x " = %d\n", lci->x)
+#define PRINT_HEX(x) printf(#x " = %08x\n", lci->x)
+		printf("DumpCallInfo\n");
+		PRINT_INT(dwLineDeviceID);
+		PRINT_INT(dwAddressID);
+		PRINT_INT(dwBearerMode);
+		PRINT_INT(dwRate);
+		PRINT_HEX(dwMediaMode);
+		PRINT_HEX(dwAppSpecific);
+		PRINT_HEX(dwCallID);
+		PRINT_HEX(dwRelatedCallID);
+		PRINT_HEX(dwCallParamFlags);
+		PRINT_HEX(dwCallStates);
+		PRINT_HEX(dwMonitorDigitModes);
+		PRINT_HEX(dwMonitorMediaModes);
+		PRINT_INT(dwOrigin);
+		PRINT_INT(dwReason);
+		PRINT_INT(dwCompletionID);
+		PRINT_INT(dwNumOwners);
+		PRINT_INT(dwNumMonitors);
+		PRINT_INT(dwCountryCode);
+		PRINT_INT(dwTrunk);
+		PRINT_HEX(dwCallerIDFlags);
+		PrintString("dwCallerID", lci->dwCallerIDSize, lci->dwCallerIDOffset, lci);
+		PrintString("dwCallerIDName", lci->dwCallerIDNameSize, lci->dwCallerIDNameOffset, lci);
+		PRINT_HEX(dwCalledIDFlags);
+		PrintString("dwCalledID", lci->dwCalledIDSize, lci->dwCalledIDOffset, lci);
+		PrintString("dwCalledIDName", lci->dwCalledIDNameSize, lci->dwCalledIDNameOffset, lci);
+		PrintString("dwAppName", lci->dwAppNameSize, lci->dwAppNameOffset, lci);
+		PrintString("dwDisplayableAddress", lci->dwDisplayableAddressSize, lci->dwDisplayableAddressOffset, lci);
+		PrintString("dwCalledParty", lci->dwCalledPartySize, lci->dwCalledPartyOffset, lci);
+		PrintString("dwCalledParty", lci->dwCalledPartySize, lci->dwCalledPartyOffset, lci);
+	}
+	void RunMessageLoop(int timeoutSecs)
 	{
 		printf("RunMessageLoop: entry\n");
 		LINEMESSAGE msg;
 		while (true)
 		{
-			int n = lineGetMessage(m_appHandle, &msg, 10 * 1000);
+			int n = lineGetMessage(m_appHandle, &msg, timeoutSecs * 1000);
 			printf("RunMessageLoop: lineGetMessage returned: %08x\n", n);
 			if (n < 0)
 				return;
@@ -223,7 +285,32 @@ public:
 			switch (msg.dwMessageID)
 			{
 			case LINE_REPLY:
-				printf("RunMessageLoop: request id = %08x, result code = %08x\n", msg.dwParam1, msg.dwParam2);
+				printf("LINE_REPLY: request id = %08x, result code = %08x\n", msg.dwParam1, msg.dwParam2);
+				break;
+			case LINE_CALLSTATE:
+				printf("LINE_CALLSTATE: LineCallState = %08x, StateData = %08x, MediaMode = %08x\n", msg.dwParam1, msg.dwParam2, msg.dwParam3);
+				if (msg.dwParam1 == LINECALLSTATE_RINGBACK)
+				{
+					std::vector<std::uint8_t> v;
+					auto l = GetCallInfo(msg.hDevice, v);
+					if (l < 0)
+					{
+						printf("RunMessageLoop: GetCallInfo returned %08x\n", l);
+					}
+					else
+					{
+						LPLINECALLINFO lci = (LPLINECALLINFO)v.data();
+						printf("RunMessageLoop: lpLineInfo = %p, lpLineInfo->dwCallerIDOffset = %d, lpLineInfo->dwCallerIDSize = %d\n",
+							lci, lci->dwCallerIDOffset, lci->dwCallerIDSize);
+						DumpCallInfo(lci);
+					}
+				}
+				break;
+			case LINE_APPNEWCALL:
+				printf("LINE_APPNEWCALL: addressId = %08x, callHandle = %08x, privilege = %08x\n", msg.dwParam1, msg.dwParam2, msg.dwParam3);
+				break;
+			default:
+				printf("RunMessageLoop: msg.dwMessageID = %s\n", MessageIdToText(msg.dwMessageID));
 				break;
 			}
 		}
@@ -259,6 +346,17 @@ CASE_TEXT(PHONE_REPLY)
 CASE_TEXT(PHONE_STATE)
 CASE_TEXT(LINE_CREATE)
 CASE_TEXT(PHONE_CREATE)
+CASE_TEXT(LINE_AGENTSPECIFIC)
+CASE_TEXT(LINE_AGENTSTATUS)
+CASE_TEXT(LINE_APPNEWCALL)
+CASE_TEXT(LINE_PROXYREQUEST)
+CASE_TEXT(LINE_REMOVE)
+CASE_TEXT(PHONE_REMOVE)
+CASE_TEXT(LINE_AGENTSESSIONSTATUS)
+CASE_TEXT(LINE_QUEUESTATUS)
+CASE_TEXT(LINE_AGENTSTATUSEX)
+CASE_TEXT(LINE_GROUPSTATUS)
+CASE_TEXT(LINE_PROXYSTATUS)
 		}
 #undef CASE_TEXT
 	}
@@ -285,7 +383,7 @@ void TestDial(int ac, char *av[])
 void TestAnswer(int ac, char *av[])
 {
 	printf("TestAnswer\n");
-	if (ac < 4)
+	if (ac < 3)
 	{
 		printf("usage: testapp.exe answer <device id>\n");
 		return;
@@ -326,6 +424,8 @@ void TestGetLinesList(int ac, char *av[])
 
 int main(int ac, char *av[])
 {
+	printf("sizeof(LINECALLINFO) = %d\n", sizeof(LINECALLINFO));
+	DWORD retVal = sizeof(LINECALLINFO);
 	if (ac < 2)
 	{
 		printf("usage: testapp.exe <command>\n");

@@ -1,7 +1,5 @@
 #pragma once
-#if DBG
-void GetDebugLevel();
-#endif
+void GetConfig();
 struct LineInfo
 {
 	std::string extension;
