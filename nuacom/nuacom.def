@@ -31,10 +31,12 @@ TSPI_providerInstall
 TSPI_providerShutdown
 TSPI_providerRemove
 TSPI_providerUIIdentify
+TSPI_providerConfig
 TUISPI_lineConfigDialog
 TUISPI_lineConfigDialogEdit
 TUISPI_providerInstall
 TUISPI_providerRemove
+TUISPI_providerConfig
 
 TSPI_lineAccept
 TSPI_lineAddToConference

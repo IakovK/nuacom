@@ -14,53 +14,10 @@ size_t write_data(char *ptr, size_t size, size_t nmemb, void *userdata)
 }
 
 #ifdef CPPREST
-pplx::task<std::tuple<bool, string_t>> GetSessionTokenAsync(const std::string &name, const std::string &pass)
-{
-	std::string hash = md5(pass.c_str());
-	string_t baseurl = U("https://api.nuacom.ie/login?");
-	string_t query;
-	query += U("email=");
-	query += conversions::to_string_t(name);
-	query += U("&pass=");
-	query += conversions::to_string_t(hash);
-	string_t fullurl = baseurl + query;
-	http_request req(methods::GET);
-	http_client client(fullurl);
-
-	return client.request(req).then([=](http_response response)
-	{
-		return response.extract_json(true);
-	}).then([=](json::value jsv)
-	{
-		if (jsv.has_field(U("session_token")))
-		{
-			return std::tuple<bool, string_t>(true, jsv[U("session_token")].as_string());
-		}
-		else
-		{
-			return std::tuple<bool, string_t>(false, jsv.serialize());
-		}
-	}).then([=](concurrency::task<std::tuple<bool, string_t>> previous)
-	{
-		try
-		{
-			return previous.get();
-		}
-		catch (const std::exception& ex)
-		{
-			return std::tuple<bool, string_t>(false, conversions::to_string_t(ex.what()));
-		}
-	});
-}
 #endif
 
 bool GetSessionToken(const std::string &name, const std::string &pass, std::string &session_token)
 {
-#ifdef CPPREST
-	auto r = GetSessionTokenAsync(name, pass).get();
-	session_token = conversions::to_utf8string(std::get<1>(r));
-	return std::get<0>(r);
-#else
 	std::string hash = md5(pass.c_str());
 	std::string baseurl = "https://api.nuacom.ie/login?";
 	std::string query;
@@ -121,7 +78,6 @@ bool GetSessionToken(const std::string &name, const std::string &pass, std::stri
 		session_token = result;
 		return false;
 	}
-#endif
 }
 
 bool MakeCall(const std::string &session_token, const std::string &src_number, const std::string &dst_number, std::string &status_message)

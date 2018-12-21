@@ -107,6 +107,7 @@ typedef struct _ASYNC_REQUEST
 
 
 extern DWORD gdwLineDeviceIDBase;
+extern DWORD gdwPermanentProviderID;
 extern ASYNC_COMPLETION gpfnCompletionProc;
 extern HMODULE hInst;
 extern BOOL gbHandleIncomingCalls;
