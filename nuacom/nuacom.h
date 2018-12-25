@@ -83,27 +83,15 @@ public:
 };
 typedef DRVLINE FAR *PDRVLINE;
 
-
-typedef struct _DRVLINECONFIG
+#define ENCRYPT_DATA 0
+#define DECRYPT_DATA 1
+struct RPCHeader
 {
-    char                    szPort[8];
-
-    char                    szCommands[64];
-
-} DRVLINECONFIG, FAR *PDRVLINECONFIG;
-
-
-typedef struct _ASYNC_REQUEST
-{
-    DWORD                   dwRequestID;
-
-    DWORD                   dwCommand;
-
-    char                    szCommand[32];
-
-    struct _ASYNC_REQUEST  *pNext;
-
-} ASYNC_REQUEST, *PASYNC_REQUEST;
+	DWORD  dwTotalSize;
+	DWORD  dwNeededSize;
+	DWORD  dwUsedSize;
+	DWORD  dwCommand;
+};
 
 
 extern DWORD gdwLineDeviceIDBase;

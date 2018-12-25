@@ -9,3 +9,10 @@ struct LineInfo
 
 using linesCollection = std::map<int, LineInfo>;
 linesCollection GetLinesInfo();
+
+BOOL CALLBACK
+DialogProc(HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam);
+

@@ -38,3 +38,4 @@ public:
 
 extern "C" void WSAPI ConnectToWebsocket(const char *securityToken, ICallbacks *callbacks, void **handle);
 extern "C" void WSAPI CloseWebsocket(void *handle);
+extern "C" void WSAPI CloseWebsocketAsync(void *handle);

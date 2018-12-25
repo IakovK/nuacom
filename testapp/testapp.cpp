@@ -1,4 +1,6 @@
 #include <Windows.h>
+#include <windowsx.h>
+#include <commctrl.h>
 #include <stdio.h>
 #include <tapi.h>
 #include <intrin.h>
@@ -6,6 +8,9 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <map>
+#include "resource.h"
+
 #pragma comment(lib, "tapi32")
 
 void TestInstall(int ac, char *av[])
@@ -422,6 +427,595 @@ void TestGetLinesList(int ac, char *av[])
 	}
 }
 
+#define HEADING_ID "Line id"
+#define HEADING_EXTENSION "Extension"
+#define HEADING_USERNAME "Username"
+#define HEADING_PASSWORD "Password"
+enum columnsEnum {
+	COL_ID,
+	COL_EXTENSION,
+	COL_USERNAME,
+	COL_PASSWORD
+};
+#define NUM_COLUMNS 3
+char  szLinesRegKey[] = "Software\\Nuacom\\TSP\\Lines";
+char  szIncomingFlag[] = "HandleIncomingCalls";
+char  szRegKey[] = "Software\\Nuacom\\TSP";
+#define  MAX_DEV_NAME_LENGTH    63
+BOOL gbHandleIncomingCalls;
+
+struct LineInfo
+{
+	std::string extension;
+	std::string userName;
+	std::string password;
+};
+
+void DeleteItem(const std::string &index)
+{
+	struct locVars
+	{
+		HKEY  hKeyLines{ 0 };
+		~locVars()
+		{
+			RegCloseKey(hKeyLines);
+		}
+	} lv;
+
+	auto n = RegOpenKeyEx(
+		HKEY_CURRENT_USER,
+		szLinesRegKey,
+		0,
+		KEY_READ,
+		&lv.hKeyLines
+	);
+
+	RegDeleteKey(lv.hKeyLines, index.c_str());
+}
+
+void SaveItem(const std::string &index, const LineInfo &li)
+{
+	DeleteItem(index);
+	struct locVars
+	{
+		HKEY  hKeyLines{ 0 };
+		HKEY  hKeyLine{ 0 };
+		~locVars()
+		{
+			RegCloseKey(hKeyLines);
+			RegCloseKey(hKeyLine);
+		}
+	} lv;
+
+	auto n = RegCreateKeyEx(
+		HKEY_CURRENT_USER,
+		szLinesRegKey,
+		0,
+		NULL,
+		0,
+		KEY_READ | KEY_WRITE, NULL,
+		&lv.hKeyLines, NULL
+	);
+
+	n = RegCreateKeyEx(
+		lv.hKeyLines,
+		index.c_str(),
+		0,
+		NULL,
+		0,
+		KEY_READ | KEY_WRITE, NULL,
+		&lv.hKeyLine, NULL
+	);
+
+	// RegSetValue extension number
+	DWORD dataType = REG_SZ;
+	n = RegSetValueEx(
+		lv.hKeyLine,
+		"extension",
+		0,
+		REG_SZ,
+		(LPBYTE)li.extension.c_str(),
+		li.extension.size()
+	);
+
+	// RegSetValue username
+	dataType = REG_SZ;
+	n = RegSetValueEx(
+		lv.hKeyLine,
+		"username",
+		0,
+		REG_SZ,
+		(LPBYTE)li.userName.c_str(),
+		li.userName.size()
+	);
+
+	// RegSetValue password
+	dataType = REG_SZ;
+	n = RegSetValueEx(
+		lv.hKeyLine,
+		"password",
+		0,
+		REG_SZ,
+		(LPBYTE)li.password.c_str(),
+		li.password.size()
+	);
+}
+
+void GetIncomingFlag()
+{
+	HKEY  hKey;
+	DWORD dwDataSize, dwDataType;
+
+	auto n = RegOpenKeyEx(
+		HKEY_CURRENT_USER,
+		szRegKey,
+		0,
+		KEY_READ,
+		&hKey
+	);
+
+	dwDataSize = sizeof(DWORD);
+	gbHandleIncomingCalls = FALSE;
+
+	n = RegQueryValueEx(
+		hKey,
+		szIncomingFlag,
+		0,
+		&dwDataType,
+		(LPBYTE)&gbHandleIncomingCalls,
+		&dwDataSize
+	);
+
+	RegCloseKey(hKey);
+}
+
+void SaveIncomingFlag()
+{
+	HKEY  hKey;
+	DWORD dwDataSize, dwDataType;
+
+	auto n = RegOpenKeyEx(
+		HKEY_CURRENT_USER,
+		szRegKey,
+		0,
+		KEY_READ|KEY_WRITE,
+		&hKey
+	);
+
+	n = RegSetValueEx(
+		hKey,
+		szIncomingFlag,
+		0,
+		REG_DWORD,
+		(LPBYTE)&gbHandleIncomingCalls,
+		4
+	);
+
+	RegCloseKey(hKey);
+}
+
+using linesCollection = std::map<int, LineInfo>;
+linesCollection GetLinesInfo();
+
+linesCollection GetLinesInfo()
+{
+	struct locVars
+	{
+		HKEY  hKeyLines{ 0 };
+		~locVars()
+		{
+			RegCloseKey(hKeyLines);
+		}
+	} lv;
+	linesCollection retVal;
+
+	auto n = RegOpenKeyEx(
+		HKEY_CURRENT_USER,
+		szLinesRegKey,
+		0,
+		KEY_READ,
+		&lv.hKeyLines
+	);
+	if (n != 0)
+	{
+		printf("GetLinesInfo: failed to open %s key: %d\n", szLinesRegKey, n);
+		return retVal;
+	}
+
+	char name[MAX_PATH];
+	DWORD nameSize = MAX_PATH;
+	for (DWORD index = 0;; index++)
+	{
+		struct locVars
+		{
+			HKEY  hKeyLine{ 0 };
+			~locVars()
+			{
+				RegCloseKey(hKeyLine);
+			}
+		} lv1;
+		name[0] = 0;
+		nameSize = MAX_PATH;
+		auto n = RegEnumKeyEx(
+			lv.hKeyLines,
+			index,
+			name,
+			&nameSize,
+			NULL, NULL, NULL, NULL
+		);
+		if (n != 0)
+			break;
+		LineInfo li;
+		n = RegOpenKeyEx(
+			lv.hKeyLines,
+			name,
+			0,
+			KEY_READ,
+			&lv1.hKeyLine
+		);
+		if (n != 0)
+		{
+			printf("GetLinesInfo: failed to open %s key: %d\n", name, n);
+			return retVal;
+		}
+
+		// RegQueryValue extension number
+		DWORD dataType = REG_SZ;
+		DWORD dataSize = MAX_DEV_NAME_LENGTH;
+		char data[MAX_DEV_NAME_LENGTH];
+		n = RegQueryValueEx(
+			lv1.hKeyLine,
+			"extension",
+			0,
+			&dataType,
+			(LPBYTE)data,
+			&dataSize
+		);
+		if (n != 0)
+		{
+			printf("GetLinesInfo: failed to query %s key: %d\n", name, n);
+			return retVal;
+		}
+		li.extension = data;
+
+		// RegQueryValue username
+		dataType = REG_SZ;
+		dataSize = MAX_DEV_NAME_LENGTH;
+		n = RegQueryValueEx(
+			lv1.hKeyLine,
+			"username",
+			0,
+			&dataType,
+			(LPBYTE)data,
+			&dataSize
+		);
+		if (n != 0)
+		{
+			printf("GetLinesInfo: failed to query %s key: %d\n", name, n);
+			return retVal;
+		}
+		li.userName = data;
+
+		// RegQueryValue password
+		dataType = REG_SZ;
+		dataSize = MAX_DEV_NAME_LENGTH;
+		n = RegQueryValueEx(
+			lv1.hKeyLine,
+			"password",
+			0,
+			&dataType,
+			(LPBYTE)data,
+			&dataSize
+		);
+		if (n != 0)
+		{
+			printf("GetLinesInfo: failed to query %s key: %d\n", name, n);
+			return retVal;
+		}
+		li.password = data;
+
+		// convert key name into line number
+		int lineNumber = atol(name);
+		retVal[lineNumber] = li;
+	}
+
+	return retVal;
+}
+
+void FillList(HWND hWndList)
+{
+	ListView_DeleteAllItems(hWndList);
+	linesCollection lc = GetLinesInfo();
+	int lvIndex = 0;
+	for (auto &ll:lc)
+	{
+		LVITEM Item;
+		char s[20];
+		_ltoa(ll.first, s, 10);
+		Item.mask = LVIF_TEXT;
+		Item.iItem = lvIndex++;
+		Item.iSubItem = COL_ID;
+		Item.pszText = (LPSTR)s;
+		ListView_InsertItem(hWndList, &Item);
+
+		Item.iSubItem = COL_EXTENSION;
+		Item.pszText = (LPSTR)ll.second.extension.c_str();
+		ListView_SetItem(hWndList, &Item);
+
+		Item.iSubItem = COL_USERNAME;
+		Item.pszText = (LPSTR)ll.second.userName.c_str();
+		ListView_SetItem(hWndList, &Item);
+
+		Item.iSubItem = COL_PASSWORD;
+		Item.pszText = (LPSTR)ll.second.password.c_str();
+		ListView_SetItem(hWndList, &Item);
+	}
+	ListView_SetColumnWidth(hWndList, COL_ID, LVSCW_AUTOSIZE_USEHEADER);
+	ListView_SetColumnWidth(hWndList, COL_EXTENSION, LVSCW_AUTOSIZE_USEHEADER);
+	ListView_SetColumnWidth(hWndList, COL_USERNAME, LVSCW_AUTOSIZE_USEHEADER);
+	ListView_SetColumnWidth(hWndList, COL_PASSWORD, 0);
+}
+
+void GetLineInfo(HWND hWndList, int index, LineInfo &li, std::string &id)
+{
+	char s[100];
+	LVITEM lv;
+	lv.iItem = index;
+	lv.iSubItem = COL_ID;
+	lv.mask = LVIF_TEXT;
+	lv.pszText = s;
+	lv.cchTextMax = 100;
+	ListView_GetItem(hWndList, &lv);
+	id = lv.pszText;
+	lv.iSubItem = COL_EXTENSION;
+	lv.pszText = s;
+	lv.cchTextMax = 100;
+	ListView_GetItem(hWndList, &lv);
+	li.extension = lv.pszText;
+	lv.iSubItem = COL_USERNAME;
+	lv.pszText = s;
+	lv.cchTextMax = 100;
+	ListView_GetItem(hWndList, &lv);
+	li.userName = lv.pszText;
+	lv.iSubItem = COL_PASSWORD;
+	lv.pszText = s;
+	lv.cchTextMax = 100;
+	ListView_GetItem(hWndList, &lv);
+	li.password = lv.pszText;
+}
+
+std::string g_index;
+LineInfo g_li;
+BOOL CALLBACK
+EditDialogProc(HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_INITDIALOG:
+	{
+		// Fill edit controls
+		auto p = (std::pair<std::string, LineInfo> *)lParam;
+		SetDlgItemText(hwnd, IDC_INDEX, p->first.c_str());
+		SetDlgItemText(hwnd, IDC_EXTENSION, p->second.extension.c_str());
+		SetDlgItemText(hwnd, IDC_USERNAME, p->second.userName.c_str());
+		SetDlgItemText(hwnd, IDC_PASSWORD, p->second.password.c_str());
+		return TRUE;
+	}
+	case WM_COMMAND:
+	{
+		switch (LOWORD((DWORD)wParam))
+		{
+			char s[100];
+		case IDOK:
+		case IDCLOSE:
+			GetDlgItemText(hwnd, IDC_INDEX, s, 100);
+			g_index = s;
+			GetDlgItemText(hwnd, IDC_EXTENSION, s, 100);
+			g_li.extension = s;
+			GetDlgItemText(hwnd, IDC_USERNAME, s, 100);
+			g_li.userName = s;
+			GetDlgItemText(hwnd, IDC_PASSWORD, s, 100);
+			g_li.password = s;
+			EndDialog(hwnd, IDOK);
+			return TRUE;
+		case IDCANCEL:
+			EndDialog(hwnd, IDCANCEL);
+			return TRUE;
+		default:
+			break;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	return FALSE;
+}
+
+BOOL RunEditDialog(HWND hwnd, const std::string &index, const LineInfo &li, std::string &index1, LineInfo &li1)
+{
+	std::pair<std::string, LineInfo> p(index, li);
+	int retVal = DialogBoxParam(NULL,
+		MAKEINTRESOURCE(IDD_DIALOG2),
+		hwnd,
+		(DLGPROC)EditDialogProc,
+		(LONG_PTR)&p);
+	if (retVal == IDOK)
+	{
+		index1 = g_index;
+		li1 = g_li;
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+void EditItem(HWND hwnd, const std::string &index, const LineInfo &li)
+{
+	LineInfo li1;
+	std::string index1;
+	if (RunEditDialog(hwnd, index, li, index1, li1))
+	{
+		DeleteItem(index);
+		SaveItem(index1, li1);
+	}
+}
+
+void EditLine(HWND hwnd, HWND hWndList)
+{
+	int iSelect = ListView_GetNextItem(hWndList, -1, LVNI_SELECTED);
+	if (iSelect != -1)
+	{
+		LineInfo li;
+		std::string index;
+		GetLineInfo(hWndList, iSelect, li, index);
+		EditItem(hwnd, index, li);
+	}
+}
+
+void AddLine(HWND hwnd, HWND hWndList)
+{
+	auto lines = GetLinesInfo();
+	int newIndex = 0;
+	for (;; newIndex++)
+	{
+		if (lines.find(newIndex) == lines.end())
+			break;
+	}
+	char s[20];
+	ltoa(newIndex, s, 10);
+	LineInfo li;
+	EditItem(hwnd, s, li);
+}
+
+void RemoveLine(HWND hWndList)
+{
+	int iSelect = ListView_GetNextItem(hWndList, -1, LVNI_SELECTED);
+	if (iSelect != -1)
+	{
+		LineInfo li;
+		std::string index;
+		GetLineInfo(hWndList, iSelect, li, index);
+		DeleteItem(index);
+	}
+}
+
+BOOL CALLBACK
+DialogProc(HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_INITDIALOG:
+	{
+		// Set up columns: extension, username
+		LVCOLUMN Column;
+		HWND hWndList = GetDlgItem(hwnd, IDC_LINESLIST);
+		HWND hWndCheck = GetDlgItem(hwnd, IDC_INCOMING);
+
+		Column.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_ORDER | LVCF_SUBITEM;
+		Column.fmt = LVCFMT_LEFT;
+
+		// id
+		Column.pszText = (LPSTR)HEADING_ID;
+		Column.cx = 140;
+		Column.iSubItem = COL_ID;
+		Column.iOrder = 0;
+		Column.fmt = LVCFMT_LEFT;
+		ListView_InsertColumn(hWndList, COL_ID, &Column);
+
+		// extension
+		Column.pszText = (LPSTR)HEADING_EXTENSION;
+		Column.cx = 140;
+		Column.iSubItem = COL_EXTENSION;
+		Column.iOrder = 1;
+		Column.fmt = LVCFMT_LEFT;
+		ListView_InsertColumn(hWndList, COL_EXTENSION, &Column);
+
+		// username
+		Column.pszText = (LPSTR)HEADING_USERNAME;
+		Column.cx = 140;
+		Column.iSubItem = COL_USERNAME;
+		Column.iOrder = 2;
+		ListView_InsertColumn(hWndList, COL_USERNAME, &Column);
+
+		// password
+		Column.pszText = (LPSTR)HEADING_PASSWORD;
+		Column.cx = 140;
+		Column.iSubItem = COL_PASSWORD;
+		Column.iOrder = 3;
+		ListView_InsertColumn(hWndList, COL_PASSWORD, &Column);
+
+		ListView_SetExtendedListViewStyleEx(hWndList, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
+		FillList(hWndList);
+		GetIncomingFlag();
+		Button_SetCheck(hWndCheck, gbHandleIncomingCalls ? BST_CHECKED : BST_UNCHECKED);
+		return TRUE;
+	}
+	case WM_COMMAND:
+	{
+		HWND hWndList = GetDlgItem(hwnd, IDC_LINESLIST);
+		HWND hWndCheck = GetDlgItem(hwnd, IDC_INCOMING);
+		switch (LOWORD((DWORD)wParam))
+		{
+		case IDOK:
+		case IDCANCEL:
+		case IDCLOSE:
+			EndDialog(hwnd, 0);
+			return TRUE;
+		case IDC_INCOMING:
+		{
+			auto a = Button_GetCheck(hWndCheck);
+			gbHandleIncomingCalls = (a == BST_CHECKED);
+			SaveIncomingFlag();
+			return TRUE;
+		}
+		case IDC_ADD:
+		{
+			AddLine(hwnd, hWndList);
+			FillList(hWndList);
+			return TRUE;
+		}
+		case IDC_REMOVE:
+		{
+			RemoveLine(hWndList);
+			FillList(hWndList);
+			return TRUE;
+		}
+		case IDC_EDIT:
+		{
+			EditLine(hwnd, hWndList);
+			FillList(hWndList);
+			return TRUE;
+		}
+		default:
+			break;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+	return FALSE;
+}
+
+void TestRunConfDialog(int ac, char *av[])
+{
+	printf("TestRunConfDialog\n");
+	DialogBox(NULL,
+		MAKEINTRESOURCE(IDD_DIALOG1),
+		NULL,
+		(DLGPROC)DialogProc);
+}
+
 int main(int ac, char *av[])
 {
 	printf("sizeof(LINECALLINFO) = %d\n", sizeof(LINECALLINFO));
@@ -429,7 +1023,7 @@ int main(int ac, char *av[])
 	if (ac < 2)
 	{
 		printf("usage: testapp.exe <command>\n");
-		printf("commands: install, uninstall, dial, answer, getprovlist, getlineslist\n");
+		printf("commands: install, uninstall, dial, answer, getprovlist, getlineslist, runconfdialog\n");
 		return 0;
 	}
 	std::string command = av[1];
@@ -445,6 +1039,8 @@ int main(int ac, char *av[])
 		TestGetProvidersList(ac, av);
 	else if (command == "getlineslist")
 		TestGetLinesList(ac, av);
+	else if (command == "runconfdialog")
+		TestRunConfDialog(ac, av);
 	else
 	{
 		printf("invalid command\n");
