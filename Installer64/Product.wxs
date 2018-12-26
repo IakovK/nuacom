@@ -7,7 +7,9 @@
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" CompressionLevel="high"/>
 
     <Feature Id="ProductFeature" Title="Nuacom service provider" Level="1">
-      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="Provider" />
+      <ComponentGroupRef Id="Config" />
+      <ComponentRef Id="ApplicationShortcut" />
     </Feature>
     <DirectoryRef Id="TARGETDIR">
       <Merge Id="VC12Redist" SourceFile="$(var.SolutionDir)runtime\Microsoft_VC120_CRT_x64.msm" DiskId="1" Language="0"/>
@@ -41,6 +43,9 @@
 
   <Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Nuacom service provider"/>
+      </Directory>
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLFOLDER" Name="Nuacom service provider" />
       </Directory>
@@ -50,7 +55,7 @@
 	</Fragment>
 
   <Fragment>
-		<ComponentGroup Id="ProductComponents" Directory="System64Folder">
+    <ComponentGroup Id="Provider" Directory="System64Folder">
       <Component Id="Component1" Win64="yes">
         <File Source="$(var.SolutionDir)x64\Release\nuacom.tsp" />
       </Component>
@@ -64,5 +69,20 @@
         <File Source="$(var.SolutionDir)openssl\win64\ssleay32.dll" />
       </Component>
     </ComponentGroup>
-	</Fragment>
+    <ComponentGroup Id="Config" Directory="ProgramFiles64Folder">
+      <Component Id="Component5" Win64="yes">
+        <File Source="$(var.SolutionDir)x64\Release\config.exe" />
+      </Component>
+    </ComponentGroup>
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="nuacom provider configuration utility"
+                  Description="nuacom provider configuration utility"
+                  Target="[#config.exe]" />
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\Nuacom\TSP" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
 </Wix>
