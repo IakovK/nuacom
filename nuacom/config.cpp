@@ -7,6 +7,47 @@ char  szIncomingFlag[] = "HandleIncomingCalls";
 char  szRegKey[] = "Software\\Nuacom\\TSP";
 char  szLinesRegKey[] = "Software\\Nuacom\\TSP\\Lines";
 
+#define HEADING_ID "Line id"
+#define HEADING_EXTENSION "Extension"
+#define HEADING_USERNAME "Username"
+#define HEADING_PASSWORD "Password"
+enum columnsEnum {
+	COL_ID,
+	COL_EXTENSION,
+	COL_USERNAME,
+	COL_PASSWORD
+};
+#define NUM_COLUMNS 4
+
+static void FillList(HWND hWndList);
+static void AddLine(HWND hwnd, HWND hWndList);
+static void RemoveLine(HWND hWndList);
+static void EditLine(HWND hwnd, HWND hWndList);
+static void EditItem(HWND hwnd, const std::string &index, const LineInfo &li);
+static void GetLineInfo(HWND hWndList, int index, LineInfo &li, std::string &id);
+static void DeleteItem(const std::string &index);
+static BOOL RunEditDialog(HWND hwnd, const std::string &index, const LineInfo &li, std::string &index1, LineInfo &li1);
+static void SaveItem(const std::string &index, const LineInfo &li);
+static void EncryptData(const std::string &data, std::vector<unsigned char> &encryptedData);
+static void DecryptData(const std::vector<unsigned char> &encryptedData, std::string &data);
+static void DecryptDataRemote(const std::vector<unsigned char> &encryptedData, std::string &data);
+extern void DecryptDataLocal(const std::vector<unsigned char> &encryptedData, std::string &data);
+
+BOOL CALLBACK
+EditDialogProc(HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam);
+
+std::pair<std::string, LineInfo> g_in;
+std::pair<std::string, LineInfo> g_out;
+
+BOOL CALLBACK
+EditDialogProc(HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam);
+
 #if DBG
 void GetDebugLevel()
 {
@@ -65,7 +106,7 @@ void GetIncomingFlag()
 	RegCloseKey(hKey);
 }
 
-void SaveIncomingFlag()
+static void SaveIncomingFlag()
 {
 	HKEY  hKey;
 
@@ -182,7 +223,6 @@ linesCollection GetLinesInfo()
 		li.extension = data;
 
 		// RegQueryValue username
-		dataType = REG_SZ;
 		dataSize = MAX_DEV_NAME_LENGTH;
 		n = RegQueryValueEx(
 			lv1.hKeyLine,
@@ -199,15 +239,14 @@ linesCollection GetLinesInfo()
 		}
 		li.userName = data;
 
-		// RegQueryValue password
-		dataType = REG_SZ;
+		// RegQueryValue passwordEncrypted
 		dataSize = MAX_DEV_NAME_LENGTH;
 		n = RegQueryValueEx(
 			lv1.hKeyLine,
-			"password",
+			"passwordEncrypted",
 			0,
 			&dataType,
-			(LPBYTE)data,
+			NULL,
 			&dataSize
 		);
 		if (n != 0)
@@ -215,7 +254,25 @@ linesCollection GetLinesInfo()
 			DBGOUT((3, "GetLinesInfo: failed to query %s key: %d", name, n));
 			return retVal;
 		}
-		li.password = data;
+
+		std::vector<BYTE> d1(dataSize);
+		n = RegQueryValueEx(
+			lv1.hKeyLine,
+			"passwordEncrypted",
+			0,
+			&dataType,
+			d1.data(),
+			&dataSize
+		);
+		if (n != 0)
+		{
+			DBGOUT((3, "GetLinesInfo: failed to query %s key: %d", name, n));
+			return retVal;
+		}
+		std::string p1;
+		DecryptData(d1, p1);
+		li.password = p1;
+		DBGOUT((3, "GetLinesInfo: password after decryption: p1 = %s", p1.c_str()));
 
 		// convert key name into line number
 		int lineNumber = atol(name);
@@ -224,40 +281,6 @@ linesCollection GetLinesInfo()
 
 	return retVal;
 }
-
-#define HEADING_ID "Line id"
-#define HEADING_EXTENSION "Extension"
-#define HEADING_USERNAME "Username"
-#define HEADING_PASSWORD "Password"
-enum columnsEnum {
-	COL_ID,
-	COL_EXTENSION,
-	COL_USERNAME,
-	COL_PASSWORD
-};
-#define NUM_COLUMNS 4
-
-void FillList(HWND hWndList);
-void SaveIncomingFlag();
-void AddLine(HWND hwnd, HWND hWndList);
-void RemoveLine(HWND hWndList);
-void EditLine(HWND hwnd, HWND hWndList);
-void EditItem(HWND hwnd, const std::string &index, const LineInfo &li);
-void GetLineInfo(HWND hWndList, int index, LineInfo &li, std::string &id);
-void DeleteItem(const std::string &index);
-BOOL RunEditDialog(HWND hwnd, const std::string &index, const LineInfo &li, std::string &index1, LineInfo &li1);
-void SaveItem(const std::string &index, const LineInfo &li);
-
-std::pair<std::string, LineInfo> g_in;
-std::pair<std::string, LineInfo> g_out;
-
-TUISPIDLLCALLBACK lpfnUIDLLCallback;
-
-BOOL CALLBACK
-EditDialogProc(HWND hwnd,
-	UINT uMsg,
-	WPARAM wParam,
-	LPARAM lParam);
 
 BOOL CALLBACK
 DialogProc(HWND hwnd,
@@ -269,18 +292,6 @@ DialogProc(HWND hwnd,
 	{
 	case WM_INITDIALOG:
 	{
-		lpfnUIDLLCallback = (TUISPIDLLCALLBACK)lParam;
-#if 0
-		DBGOUT((3, "DialogProc: lpfnUIDLLCallback = %p, gdwPermanentProviderID = %d", lpfnUIDLLCallback, gdwPermanentProviderID));
-		DBGOUT((3, "DialogProc: calling lpfnUIDLLCallback"));
-		std::vector<unsigned char> v(sizeof(RPCHeader) + 5);
-		auto ph = (RPCHeader*)v.data();
-		ph->dwTotalSize = 3 * 4 + 5;
-		char * ph1 = (char*)(ph + 1);
-		memcpy(ph1, "1234", 5);
-		auto n = lpfnUIDLLCallback(gdwPermanentProviderID, TUISPIDLL_OBJECT_PROVIDERID, v.data(), v.size());
-		DBGOUT((3, "DialogProc: calling lpfnUIDLLCallback done. n = %08x", n));
-#endif
 		// Set up columns: id, extension, username
 		LVCOLUMN Column;
 		HWND hWndList = GetDlgItem(hwnd, IDC_LINESLIST);
@@ -574,7 +585,6 @@ void SaveItem(const std::string &index, const LineInfo &li)
 	);
 
 	// RegSetValue username
-	dataType = REG_SZ;
 	n = RegSetValueEx(
 		lv.hKeyLine,
 		"username",
@@ -584,16 +594,93 @@ void SaveItem(const std::string &index, const LineInfo &li)
 		li.userName.size()
 	);
 
-	// RegSetValue password
-	dataType = REG_SZ;
+	std::vector<unsigned char> passwordEncrypted;
+	EncryptData(li.password, passwordEncrypted);
+	DBGOUT((3, "SaveItem. password = %s, passwordEncrypted.size = %d",
+		li.password.c_str(), passwordEncrypted.size()));
+
+	// RegSetValue passwordEncrypted
 	n = RegSetValueEx(
 		lv.hKeyLine,
-		"password",
+		"passwordEncrypted",
 		0,
-		REG_SZ,
-		(LPBYTE)li.password.c_str(),
-		li.password.size()
+		REG_BINARY,
+		(LPBYTE)passwordEncrypted.data(),
+		passwordEncrypted.size()
 	);
+}
+
+void EncryptData(const std::string &data, std::vector<unsigned char> &encryptedData)
+{
+	DBGOUT((3, "EncryptData. glpfnUIDLLCallback = %p", glpfnUIDLLCallback));
+	DWORD stringSize = data.length();
+	std::vector<unsigned char> v(sizeof(RPCHeader) + 4 + stringSize);
+	auto ph = (RPCHeader*)v.data();
+	ph->dwTotalSize = v.size();
+	ph->dwCommand = ENCRYPT_DATA;
+	char * ph1 = (char*)(ph + 1);
+	memcpy(ph1, &stringSize, 4); ph1 += 4;
+	memcpy(ph1, data.data(), stringSize);
+	auto n = glpfnUIDLLCallback(gdwPermanentProviderID, TUISPIDLL_OBJECT_PROVIDERID, v.data(), v.size());
+	if (n != 0)
+		return;
+	if (ph->dwUsedSize == 0)
+	{
+		v.resize(ph->dwNeededSize);
+		ph = (RPCHeader*)v.data();
+		ph->dwTotalSize = v.size();
+		ph->dwCommand = ENCRYPT_DATA;
+		ph1 = (char*)(ph + 1);
+		memcpy(ph1, &stringSize, 4); ph1 += 4;
+		memcpy(ph1, data.data(), stringSize);
+		auto n = glpfnUIDLLCallback(gdwPermanentProviderID, TUISPIDLL_OBJECT_PROVIDERID, v.data(), v.size());
+		if (n != 0)
+			return;
+	}
+	DWORD dataSize;
+	ph1 = (char*)(ph + 1);
+	memcpy(&dataSize, ph1, 4); ph1 += 4;
+	encryptedData.assign(ph1, ph1 + dataSize);
+}
+
+void DecryptDataRemote(const std::vector<unsigned char> &encryptedData, std::string &data)
+{
+	DWORD dataSize = encryptedData.size();
+	std::vector<unsigned char> v(sizeof(RPCHeader) + 4 + dataSize);
+	auto ph = (RPCHeader*)v.data();
+	ph->dwTotalSize = v.size();
+	ph->dwCommand = DECRYPT_DATA;
+	char * ph1 = (char*)(ph + 1);
+	memcpy(ph1, &dataSize, 4); ph1 += 4;
+	memcpy(ph1, encryptedData.data(), dataSize);
+	auto n = glpfnUIDLLCallback(gdwPermanentProviderID, TUISPIDLL_OBJECT_PROVIDERID, v.data(), v.size());
+	if (n != 0)
+		return;
+	if (ph->dwUsedSize == 0)
+	{
+		v.resize(ph->dwNeededSize);
+		ph = (RPCHeader*)v.data();
+		ph->dwTotalSize = v.size();
+		ph->dwCommand = DECRYPT_DATA;
+		ph1 = (char*)(ph + 1);
+		memcpy(ph1, &dataSize, 4); ph1 += 4;
+		memcpy(ph1, encryptedData.data(), dataSize);
+		auto n = glpfnUIDLLCallback(gdwPermanentProviderID, TUISPIDLL_OBJECT_PROVIDERID, v.data(), v.size());
+		if (n != 0)
+			return;
+	}
+	DWORD stringSize;
+	ph1 = (char*)(ph + 1);
+	memcpy(&stringSize, ph1, 4); ph1 += 4;
+	data.assign(ph1, ph1 + stringSize);
+}
+
+void DecryptData(const std::vector<unsigned char> &encryptedData, std::string &data)
+{
+	if (glpfnUIDLLCallback)
+		DecryptDataRemote(encryptedData, data);
+	else
+		DecryptDataLocal(encryptedData, data);
 }
 
 BOOL CALLBACK
