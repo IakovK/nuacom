@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Nuacom service provider" Language="1033" Version="1.0.0.0" Manufacturer="Nuacom" UpgradeCode="2fc61d69-f4f5-4db8-8855-f9417ed7e033">
+    <Package InstallerVersion="405" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" CompressionLevel="high"/>
+
+    <Feature Id="ProductFeature" Title="Nuacom service provider" Level="1">
+      <ComponentGroupRef Id="Provider" />
+      <ComponentGroupRef Id="Config" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+    <DirectoryRef Id="TARGETDIR">
+      <Merge Id="VC12Redist" SourceFile="$(var.SolutionDir)runtime\Microsoft_VC120_CRT_x86.msm" DiskId="1" Language="0"/>
+      <Merge Id="VC14Redist" SourceFile="$(var.SolutionDir)runtime\Microsoft_VC140_CRT_x86.msm" DiskId="1" Language="0"/>
+    </DirectoryRef>
+    <Feature Id="VC12Redist" Title="Visual C++ 12.0 Runtime" AllowAdvertise="no" Display="hidden" Level="1">
+      <MergeRef Id="VC12Redist"/>
+    </Feature>
+    <Feature Id="VC14Redist" Title="Visual C++ 14.0 Runtime" AllowAdvertise="no" Display="hidden" Level="1">
+      <MergeRef Id="VC14Redist"/>
+    </Feature>
+
+    <Binary Id='caDll' SourceFile='$(var.SolutionDir)NuacomCA\bin\Release\NuacomCA.dll'/>
+    <CustomAction Id='PropertyAssignForInstallProvider' Property='InstallProvider'
+					  Value='[#nuacom.tsp]' />
+    <CustomAction Id='InstallProvider' BinaryKey='caDll' DllEntry='InstallProvider' Execute='deferred' Impersonate='no'/>
+    <CustomAction Id='UninstallProvider' BinaryKey='caDll' DllEntry='UninstallProvider' Execute='deferred' Impersonate='no'/>
+
+    <InstallExecuteSequence>
+      <Custom Action='PropertyAssignForInstallProvider' After='InstallFiles'>
+        NOT Installed
+      </Custom>
+      <Custom Action='InstallProvider' After='PropertyAssignForInstallProvider'>
+        NOT Installed
+      </Custom>
+      <Custom Action='UninstallProvider' Before='DeleteServices'>
+        REMOVE~="ALL"
+      </Custom>
+    </InstallExecuteSequence>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Nuacom service provider"/>
+      </Directory>
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Nuacom service provider" />
+      </Directory>
+      <Directory Id="SystemFolder">
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="Provider" Directory="SystemFolder">
+      <Component Id="Component1">
+        <File Source="$(var.SolutionDir)Release\nuacom.tsp" />
+      </Component>
+      <Component Id="Component2">
+        <File Source="$(var.SolutionDir)Release\WebsocketAPI.dll" />
+      </Component>
+      <Component Id="Component3">
+        <File Source="$(var.SolutionDir)openssl\win32\libeay32.dll" />
+      </Component>
+      <Component Id="Component4">
+        <File Source="$(var.SolutionDir)openssl\win32\ssleay32.dll" />
+      </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="Config" Directory="ProgramFilesFolder">
+      <Component Id="Component5">
+        <File Source="$(var.SolutionDir)Release\config.exe" />
+      </Component>
+    </ComponentGroup>
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="nuacom provider configuration utility"
+                  Description="nuacom provider configuration utility"
+                  Target="[#config.exe]" />
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\Nuacom\TSP" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>
