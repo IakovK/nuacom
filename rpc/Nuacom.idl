@@ -1,0 +1,14 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(A17E8646-2774-44CC-830F-3533CDCF761B),
+	version(1.0),
+]
+interface Nuacom
+{
+	void GetConfigInfo([out, string, size_is(nameSize)] char *name, ULONG nameSize,
+		[out, string, size_is(passwordSize)] char *password, ULONG passwordSize,
+		[out, string, size_is(extensionSize)] char *extension, ULONG extensionSize,
+		[out] BOOL *bHandleIncoming, [out] BOOL *bConfigured);
+}
