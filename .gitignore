@@ -261,3 +261,7 @@ __pycache__/
 *.pyc
 /common/Win32/Nuacom_c.c
 /common/Win32
+/RPCClient/rpc1_c.c
+/RPCClient/rpc1_s.c
+/RPCClient/rpc_c.c
+/RPCClient/rpc_s.c

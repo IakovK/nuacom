@@ -27,7 +27,7 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RPCWrapper.h">
+    <ClInclude Include="..\RPCClient\RPCWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,10 +38,10 @@
     <ClCompile Include="SystemTraySDK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RPCWrapper.cpp">
+    <ClCompile Include="..\RPCClient\rpc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rpc.c">
+    <ClCompile Include="..\RPCClient\RPCWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

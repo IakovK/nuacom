@@ -41,6 +41,7 @@ public:
 	void ProcessCallMessage(const std::string &msgId, const std::map<std::string, IMessageHolder*> &msg);
 	bool shouldProcessIncomingCalls(const std::string &callDirection);
 	DWORD CalculateCallInfoSize();
+	bool ConnectToServer();
 
 	HTAPILINE               htLine;
 

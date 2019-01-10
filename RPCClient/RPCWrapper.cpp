@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <rpc.h>
 #include "RPCWrapper.h"
-#include <AtlBase.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -9,19 +8,14 @@
 
 CRPCWrapper::CRPCWrapper()
 {
-#if 0
 	m_pszStringBinding = NULL;
 	m_binding = NULL;
-	m_hEnum = NULL;
-#endif
 }
 
 CRPCWrapper::~CRPCWrapper()
 {
-#if 0
 	RpcStringFreeA(&m_pszStringBinding);
 	RpcBindingFree(&m_binding);
-#endif
 }
 
 RPC_STATUS CRPCWrapper::Init (unsigned char * pszProtocolSequence, unsigned char * pszEndpoint)
@@ -47,11 +41,11 @@ RPC_STATUS CRPCWrapper::Init (unsigned char * pszProtocolSequence, unsigned char
 	return status;
 }
 
-RPC_STATUS CRPCWrapper::GetConfigInfo(char *name, ULONG nameSize, char *password, ULONG passwordSize, char *extension, ULONG extensionSize, BOOL *bHandleIncoming, BOOL *bConfigured)
+RPC_STATUS CRPCWrapper::GetConfigInfo(char *name, ULONG nameSize, char *password, ULONG passwordSize, char *extension, ULONG extensionSize, BOOL *bHandleIncoming, BOOL *bIncomingLocal, BOOL *bConfigured)
 {
 	RpcTryExcept
 	{
-	::GetConfigInfo(m_binding, (unsigned char*)name, nameSize, (unsigned char*)password, passwordSize, (unsigned char*)extension, extensionSize, bHandleIncoming, bConfigured);
+	::GetConfigInfo(m_binding, (unsigned char*)name, nameSize, (unsigned char*)password, passwordSize, (unsigned char*)extension, extensionSize, bHandleIncoming, bIncomingLocal, bConfigured);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();
@@ -60,76 +54,72 @@ RPC_STATUS CRPCWrapper::GetConfigInfo(char *name, ULONG nameSize, char *password
 		return RPC_S_OK;
 }
 
-#if 0
-RPC_STATUS CRPCWrapper::EnumCustomers()
+RPC_STATUS CRPCWrapper::SetConfigInfo(char *name, char *password, char *extension, ULONG extensionSize, BOOL bHandleIncoming, BOOL bIncomingLocal, BOOL *bConfigured)
 {
 	RpcTryExcept
 	{
-	::EnumCustomers (m_binding, &m_hEnum);
+	::SetConfigInfo(m_binding, (unsigned char*)name, (unsigned char*)password, (unsigned char*)extension, extensionSize, bHandleIncoming, bIncomingLocal, bConfigured);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();
 	}
 	RpcEndExcept
-	return RPC_S_OK;
+		return RPC_S_OK;
 }
 
-RPC_STATUS CRPCWrapper::GetNextCustomer (WCHAR *name, ULONG bufSize, bool *bEnabled)
+RPC_STATUS CRPCWrapper::ConnectToServer(unsigned char *pszCallbackEndpoint, PVOID callback)
 {
 	RpcTryExcept
 	{
-		BOOL b;
-		::GetNextCustomer (m_binding, m_hEnum, &b, bufSize, name);
-		*bEnabled = b;
+	::ConnectToServer(m_binding, pszCallbackEndpoint, (PCALLBACK_HANDLE_TYPE)callback, &m_hConn);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();
 	}
 	RpcEndExcept
-	return RPC_S_OK;
+		return RPC_S_OK;
 }
 
-RPC_STATUS CRPCWrapper::CloseEnum()
+RPC_STATUS CRPCWrapper::MakeCall(char *address, char *statusMessage, ULONG statusMessageSize, BOOL *bSuccess)
 {
 	RpcTryExcept
 	{
-	::CloseEnum (m_binding, m_hEnum);
+	::MakeCall(m_binding, m_hConn, (unsigned char*)address, (unsigned char*)statusMessage, statusMessageSize, bSuccess);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();
 	}
 	RpcEndExcept
-	return RPC_S_OK;
+		return RPC_S_OK;
 }
 
-RPC_STATUS CRPCWrapper::TransferFilesBegin (const WCHAR *transferName, ULONG options, ULONG nCount)
+RPC_STATUS CRPCWrapper::Hangup(char *localChannel)
 {
 	RpcTryExcept
 	{
-		::TransferFilesBegin (m_binding, transferName, options, nCount);
+	::Hangup(m_binding, m_hConn, (unsigned char*)localChannel);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();
 	}
 	RpcEndExcept
-	return RPC_S_OK;
+		return RPC_S_OK;
 }
 
-RPC_STATUS CRPCWrapper::TransferFile (const WCHAR *fileName)
+RPC_STATUS CRPCWrapper::Disconnect()
 {
 	RpcTryExcept
 	{
-		::TransferFile (m_binding, fileName);
+	::Disconnect(m_binding, &m_hConn);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();
 	}
 	RpcEndExcept
-	return RPC_S_OK;
+		return RPC_S_OK;
 }
-#endif
 
-extern "C" void __RPC_FAR * __RPC_API MIDL_user_allocate(size_t cBytes) 
+extern "C" void __RPC_FAR * __RPC_API MIDL_user_allocate(size_t cBytes)
 { 
     return(malloc(cBytes)); 
 }

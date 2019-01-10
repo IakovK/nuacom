@@ -7,8 +7,29 @@ import "ocidl.idl";
 ]
 interface Nuacom
 {
-	void GetConfigInfo([out, string, size_is(nameSize)] char *name, ULONG nameSize,
+	typedef [context_handle] void *PCONTEXT_HANDLE_TYPE;
+	typedef [ref] PCONTEXT_HANDLE_TYPE * PPCONTEXT_HANDLE_TYPE;
+	typedef UINT64 PCALLBACK_HANDLE_TYPE;
+
+	void GetConfigInfo([in] handle_t Binding,
+		[out, string, size_is(nameSize)] char *name, ULONG nameSize,
 		[out, string, size_is(passwordSize)] char *password, ULONG passwordSize,
 		[out, string, size_is(extensionSize)] char *extension, ULONG extensionSize,
-		[out] BOOL *bHandleIncoming, [out] BOOL *bConfigured);
+		[out] BOOL *bHandleIncoming, [out] BOOL *bIncomingLocal, [out] BOOL *bConfigured);
+	void SetConfigInfo([in] handle_t Binding,
+		[in, string] char *name,
+		[in, string] char *password,
+		[out, string, size_is(extensionSize)] char *extension, [in] ULONG extensionSize,
+		[in] BOOL bHandleIncoming, [in] BOOL bIncomingLocal, [out] BOOL *bConfigured);
+	void ConnectToServer([in] handle_t Binding,
+		[in, string] char *pszCallbackEndpoint, [in] PCALLBACK_HANDLE_TYPE hCallback, [out] PPCONTEXT_HANDLE_TYPE hConn);
+	void MakeCall([in] handle_t Binding,
+		[in] PCONTEXT_HANDLE_TYPE hConn,
+		[in, string] char *address,
+		[out, string, size_is(statusMessageSize)] char *statusMessage, [in] ULONG statusMessageSize, [out] BOOL *bSuccess);
+	void Hangup([in] handle_t Binding,
+		[in] PCONTEXT_HANDLE_TYPE hConn,
+		[in, string] char *localChannel);
+	void Disconnect([in] handle_t Binding,
+		[in, out] PPCONTEXT_HANDLE_TYPE hConn);
 }

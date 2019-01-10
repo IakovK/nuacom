@@ -18,5 +18,8 @@
     <Midl Include="Nuacom.idl">
       <Filter>Source Files</Filter>
     </Midl>
+    <Midl Include="NuacomCallback.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
   </ItemGroup>
 </Project>

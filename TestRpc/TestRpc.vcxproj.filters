@@ -15,51 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Service.cpp">
+    <ClCompile Include="TestRpc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Server.cpp">
+    <ClCompile Include="..\RPCClient\RPCWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="nuacomAPI.cpp">
+    <ClCompile Include="..\RPCClient\rpc_c.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="md5.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WebsocketAPI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RPCClient\rpc_s.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RPCClient\RPCWrapper1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RPCClient\rpc1_c.c">
+    <ClCompile Include="..\RPCClient\rpc1_s.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Service.H">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="nuacomAPI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="md5.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="header.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WebsocketAPI.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RPCClient\RPCWrapper1.h">
+    <ClInclude Include="..\RPCClient\RPCWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

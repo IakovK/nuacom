@@ -151,16 +151,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\RPCClient\RPCWrapper.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="header.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="RPCWrapper.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\RPCClient\rpc.c" />
+    <ClCompile Include="..\RPCClient\RPCWrapper.cpp" />
     <ClCompile Include="config.cpp" />
-    <ClCompile Include="rpc.c" />
-    <ClCompile Include="RPCWrapper.cpp" />
     <ClCompile Include="SystemTraySDK.cpp" />
   </ItemGroup>
   <ItemGroup>

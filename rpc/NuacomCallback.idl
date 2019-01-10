@@ -1,0 +1,15 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(420F25A0-25B3-4A96-9C00-1E58F75E20A6),
+	version(1.0),
+]
+interface NuacomCallback
+{
+	typedef UINT64 PCALLBACK_HANDLE_TYPE;
+
+	void SendString([in] handle_t Binding,
+		[in] PCALLBACK_HANDLE_TYPE hCallback,
+		[in, string] char *msg);
+}
