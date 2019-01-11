@@ -32,7 +32,7 @@ TSPI_providerShutdown
 TSPI_providerRemove
 TSPI_providerUIIdentify
 ;TSPI_providerConfig
-TSPI_providerGenericDialogData
+;TSPI_providerGenericDialogData
 TUISPI_lineConfigDialog
 TUISPI_lineConfigDialogEdit
 TUISPI_providerInstall

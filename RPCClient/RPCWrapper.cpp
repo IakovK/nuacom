@@ -67,11 +67,11 @@ RPC_STATUS CRPCWrapper::SetConfigInfo(char *name, char *password, char *extensio
 		return RPC_S_OK;
 }
 
-RPC_STATUS CRPCWrapper::ConnectToServer(unsigned char *pszCallbackEndpoint, PVOID callback)
+RPC_STATUS CRPCWrapper::ConnectToServer(unsigned char *pszCallbackEndpoint, PVOID callback, ULONG providerId)
 {
 	RpcTryExcept
 	{
-	::ConnectToServer(m_binding, pszCallbackEndpoint, (PCALLBACK_HANDLE_TYPE)callback, &m_hConn);
+	::ConnectToServer(m_binding, pszCallbackEndpoint, (PCALLBACK_HANDLE_TYPE)callback, providerId, &m_hConn);
 	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
 	{
 		return RpcExceptionCode();

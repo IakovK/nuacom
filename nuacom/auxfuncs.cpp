@@ -93,23 +93,6 @@ TSPI_lineConditionalMediaDetection(
 
 LONG
 TSPIAPI
-TSPI_lineDevSpecific(
-	DRV_REQUESTID       dwRequestID,
-	HDRVLINE            hdLine,
-	DWORD               dwAddressID,
-	HDRVCALL            hdCall,
-	LPVOID              lpParams,
-	DWORD               dwSize
-)
-{
-	DBGOUT((3, "TSPI_lineDevSpecific"));
-	LONG        lResult = LINEERR_OPERATIONFAILED;
-
-	return lResult;
-}
-
-LONG
-TSPIAPI
 TSPI_lineDevSpecificFeature(
 	DRV_REQUESTID       dwRequestID,
 	HDRVLINE            hdLine,
@@ -298,22 +281,6 @@ TSPI_lineMonitorTones(
 )
 {
 	DBGOUT((3, "TSPI_lineMonitorTones"));
-	LONG        lResult = LINEERR_OPERATIONFAILED;
-
-	return lResult;
-}
-
-LONG
-TSPIAPI
-TSPI_lineNegotiateExtVersion(
-	DWORD               dwDeviceID,
-	DWORD               dwTSPIVersion,
-	DWORD               dwLowVersion,
-	DWORD               dwHighVersion,
-	LPDWORD             lpdwExtVersion
-)
-{
-	DBGOUT((3, "TSPI_lineNegotiateExtVersion"));
 	LONG        lResult = LINEERR_OPERATIONFAILED;
 
 	return lResult;

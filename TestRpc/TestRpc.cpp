@@ -258,7 +258,7 @@ int main()
 		return 0;
 	}
 	printf("TestRpc: calling rpcw.ConnectToServer. &cb = %p\n", &cb);
-	status = rpcw.ConnectToServer(pszCallbackEndpoint, &cb);
+	status = rpcw.ConnectToServer(pszCallbackEndpoint, &cb, 0);
 	if (status != RPC_S_OK)
 	{
 		printf("TestRpc: rpcw.ConnectToServer failed. status = %d(%08x)\n", status, status);

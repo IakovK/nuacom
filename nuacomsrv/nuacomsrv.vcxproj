@@ -81,7 +81,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libboost_date_time-vc140-mt-gd-1_61.lib;libboost_random-vc140-mt-gd-1_61.lib;libboost_system-vc140-mt-gd-1_61.lib;libcurl_a_debug.lib;Crypt32.lib;libeay32.lib;ssleay32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tapi32.lib;Crypt32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libeay32.lib;ssleay32.lib;libboost_date_time-vc140-mt-gd-1_61.lib;libboost_random-vc140-mt-gd-1_61.lib;libboost_system-vc140-mt-gd-1_61.lib;libcurl_a_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)boost\lib64;$(SolutionDir)curl\lib\VS2015\win64;$(SolutionDir)openssl\win64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -96,7 +96,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libboost_date_time-vc140-mt-gd-1_61.lib;libboost_random-vc140-mt-gd-1_61.lib;libboost_system-vc140-mt-gd-1_61.lib;libcurl_a_debug.lib;Crypt32.lib;libeay32.lib;ssleay32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tapi32.lib;Crypt32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libeay32.lib;ssleay32.lib;libboost_date_time-vc140-mt-gd-1_61.lib;libboost_random-vc140-mt-gd-1_61.lib;libboost_system-vc140-mt-gd-1_61.lib;libcurl_a_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)boost\lib32;$(SolutionDir)\curl\lib\VS2015\win32;$(SolutionDir)openssl\win32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -115,7 +115,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libboost_date_time-vc140-mt-1_61.lib;libboost_random-vc140-mt-1_61.lib;libboost_system-vc140-mt-1_61.lib;libcurl_a.lib;Crypt32.lib;libeay32.lib;ssleay32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tapi32.lib;Crypt32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libeay32.lib;ssleay32.lib;libboost_date_time-vc140-mt-1_61.lib;libboost_random-vc140-mt-1_61.lib;libboost_system-vc140-mt-1_61.lib;libcurl_a.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)boost\lib32;$(SolutionDir)\curl\lib\VS2015\win32;$(SolutionDir)openssl\win32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -134,7 +134,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libboost_date_time-vc140-mt-1_61.lib;libboost_random-vc140-mt-1_61.lib;libboost_system-vc140-mt-1_61.lib;libcurl_a.lib;Crypt32.lib;libeay32.lib;ssleay32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tapi32.lib;Crypt32.lib;Rpcrt4.lib;Wldap32.Lib;normaliz.lib;WS2_32.Lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libeay32.lib;ssleay32.lib;libboost_date_time-vc140-mt-1_61.lib;libboost_random-vc140-mt-1_61.lib;libboost_system-vc140-mt-1_61.lib;libcurl_a.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)boost\lib64;$(SolutionDir)curl\lib\VS2015\win64;$(SolutionDir)openssl\win64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -149,6 +149,7 @@
     <ClCompile Include="WebsocketAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\structs.h" />
     <ClInclude Include="..\RPCClient\RPCWrapper1.h" />
     <ClInclude Include="header.h" />
     <ClInclude Include="md5.h" />

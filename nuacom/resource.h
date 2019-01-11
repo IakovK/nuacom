@@ -2,17 +2,6 @@
 // Microsoft Visual C++ generated include file.
 // Used by nuacom.rc
 //
-#define IDD_DIALOG1                     101
-#define IDD_DIALOG2                     103
-#define IDC_ADD                         1005
-#define IDC_REMOVE                      1006
-#define IDC_EDIT                        1007
-#define IDC_LINESLIST                   1008
-#define IDC_INCOMING                    1009
-#define IDC_INDEX                       1010
-#define IDC_EXTENSION                   1011
-#define IDC_USERNAME                    1012
-#define IDC_PASSWORD                    1013
 
 // Next default values for new objects
 // 

@@ -38,10 +38,10 @@
     <ClCompile Include="SystemTraySDK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RPCClient\rpc.c">
+    <ClCompile Include="..\RPCClient\RPCWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\RPCClient\RPCWrapper.cpp">
+    <ClCompile Include="..\RPCClient\rpc_c.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -43,6 +43,8 @@
 #include "..\common\x64\Nuacom.h"
 #endif
 
+#include "..\common\structs.h"
+
 #define EP_NAME "NuacomService"
 char  szRegKey[] = "Software\\Nuacom\\TSP";
 char  szIncomingFlag[] = "HandleIncomingCalls";
@@ -424,11 +426,49 @@ struct ConnectionContext : ICallbacks
 	std::string extension;
 	void *socketHandle;
 	PCALLBACK_HANDLE_TYPE hCallback;
+	ULONG providerId;
 	CRPCWrapperCallback rpcw;
+
+	bool m_bInited;
+	HLINEAPP m_appHandle;
+	DWORD m_apiVersion;
+	LINEINITIALIZEEXPARAMS m_params;
+
+	ConnectionContext();
+	~ConnectionContext();
+	void SendString(const std::string &msg);
+	void SendStringTAPI(char* msg);
+	void WaitForReply(LONG requestId, int timeoutSecs);
 	virtual void OnOpenListener();
 	virtual void OnFailListener();
 	virtual void ProcessMessage(IMessageHolder *pmh);
 };
+
+ConnectionContext::ConnectionContext()
+	:m_bInited{ false }
+	, socketHandle{ NULL }
+	, hCallback{ NULL }
+	, providerId{ 0 }
+	, m_appHandle{ NULL }
+	, m_apiVersion{ TAPI_CURRENT_VERSION }
+{
+	DWORD numDevs;
+	m_params.dwTotalSize = sizeof(LINEINITIALIZEEXPARAMS);
+	m_params.dwOptions = LINEINITIALIZEEXOPTION_USEEVENT;
+	auto n = lineInitializeEx(&m_appHandle, NULL, NULL, "nuacom test app", &numDevs, &m_apiVersion, &m_params);
+	if (n == 0)
+	{
+		m_bInited = true;
+	}
+}
+
+ConnectionContext::~ConnectionContext()
+{
+	if (m_bInited)
+	{
+		auto n = lineShutdown(m_appHandle);
+	}
+}
 
 void ConnectionContext::OnOpenListener()
 {
@@ -444,6 +484,67 @@ namespace ssio
 	void accept_message(message const& msg, rapidjson::Value& val, rapidjson::Document& doc, std::vector<std::shared_ptr<const std::string>>& buffers);
 }
 
+void ConnectionContext::WaitForReply(LONG requestId, int timeoutSecs)
+{
+	printf("ConnectionContext::WaitForReply: entry. requestId = %d\n", requestId);
+	LINEMESSAGE msg;
+	while (true)
+	{
+		int n = lineGetMessage(m_appHandle, &msg, timeoutSecs * 1000);
+		printf("ConnectionContext::WaitForReply: lineGetMessage returned: %08x\n", n);
+		if (n < 0)
+			break;
+		switch (msg.dwMessageID)
+		{
+		case LINE_REPLY:
+			printf("LINE_REPLY: request id = %d, result code = %08x\n", msg.dwParam1, msg.dwParam2);
+			break;
+		default:
+			break;
+		}
+		if (msg.dwParam1 == requestId)
+			break;
+	}
+	printf("RunMessageLoop: exit\n");
+}
+
+void ConnectionContext::SendStringTAPI(char* msg)
+{
+	printf("ConnectionContext::SendStringTAPI: msg.size = %d, providerId = %d, hCallback = %p\n", strlen(msg), providerId, hCallback);
+	HLINE lineHandle;
+	auto n = lineOpen(m_appHandle, providerId, &lineHandle, m_apiVersion, 0, (DWORD_PTR)this,
+		LINECALLPRIVILEGE_OWNER, LINEMEDIAMODE_UNKNOWN, NULL);
+	printf("ConnectionContext::SendStringTAPI: lineOpen returned: %08x\n", n);
+	if (n != 0)
+		return;
+	DWORD dwTotalSize = sizeof(RPCHeader) + sizeof(stringData) + strlen(msg);
+	RPCHeader *h = (RPCHeader *)malloc(dwTotalSize);
+	if (h == NULL)
+		return;
+	memset(h, 0, dwTotalSize);
+	h->dwTotalSize = dwTotalSize;
+	h->dwCommand = SEND_STRING;
+	h->dwDataSize = sizeof(stringData) + strlen(msg);
+	stringData *sd = (stringData *)h->data;
+	sd->callback = hCallback;
+	sd->dwDataSize = strlen(msg);
+	memcpy(sd->data, msg, sd->dwDataSize);
+	n = lineDevSpecific(lineHandle, 0, NULL, h, h->dwTotalSize);
+	printf("ConnectionContext::SendStringTAPI: lineDevSpecific returned: %08x\n", n);
+	if (n > 0)
+		WaitForReply(n, 30);
+	free(h);
+	lineClose(lineHandle);
+}
+
+void ConnectionContext::SendString(const std::string &msg)
+{
+	if (providerId == 0)
+		rpcw.SendString((char*)msg.c_str(), hCallback);
+	else
+		SendStringTAPI((char*)msg.c_str());
+}
+
 void ConnectionContext::ProcessMessage(IMessageHolder *pmh)
 {
 	ssio::message::ptr _m = pmh->get_message();
@@ -454,6 +555,7 @@ void ConnectionContext::ProcessMessage(IMessageHolder *pmh)
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	doc.Accept(writer);
 	std::string msgStr = buffer.GetString();
+	SendString(msgStr);
 	RPC_STATUS status = rpcw.SendString((char*)msgStr.c_str(), hCallback);
 }
 
@@ -461,11 +563,14 @@ void ConnectToServer(
 	/* [in] */ handle_t Binding,
 	/* [string][in] */ unsigned char *pszCallbackEndpoint,
 	/* [in] */ PCALLBACK_HANDLE_TYPE hCallback,
+	/* [in] */ ULONG providerId,
 	/* [out] */ PPCONTEXT_HANDLE_TYPE hConn)
 {
-	printf("ConnectToServer: pszCallbackEndpoint = %s, hCallback = %p\n", pszCallbackEndpoint, hCallback);
+	printf("ConnectToServer: pszCallbackEndpoint = %s, hCallback = %p, providerId = %d\n", pszCallbackEndpoint, hCallback, providerId);
 	ConnectionContext *pcc = new ConnectionContext();
 	pcc->hCallback = hCallback;
+	pcc->providerId = providerId;
+
 	char name[255];
 	char password[255];
 	char extension[255];
@@ -475,6 +580,7 @@ void ConnectToServer(
 	{
 		RpcRaiseException(RPC_S_CALL_FAILED);
 	}
+
 	bool b = nuacom::GetSessionToken(name, password, pcc->session_token);
 	if (!b)
 	{
@@ -483,13 +589,18 @@ void ConnectToServer(
 		RpcRaiseException(RPC_S_CALL_FAILED);
 	}
 	pcc->extension = extension;
-	unsigned char * pszProtocolSequence = (unsigned char *)"ncalrpc";
-	RPC_STATUS status = pcc->rpcw.Init(pszProtocolSequence, pszCallbackEndpoint);
-	if (status != RPC_S_OK)
+
+	if (providerId == 0)
 	{
-		printf("ConnectToServer: pcc->rpcw.Init failed. status = %d", status);
-		RpcRaiseException(status);
+		unsigned char * pszProtocolSequence = (unsigned char *)"ncalrpc";
+		RPC_STATUS status = pcc->rpcw.Init(pszProtocolSequence, pszCallbackEndpoint);
+		if (status != RPC_S_OK)
+		{
+			printf("ConnectToServer: pcc->rpcw.Init failed. status = %d", status);
+			RpcRaiseException(status);
+		}
 	}
+
 	printf("ConnectToServer: calling ConnectToWebsocket: pcc = %p, session_token = %s\n", pcc, pcc->session_token.c_str());
 	ConnectToWebsocket(pcc->session_token.c_str(), pcc, &pcc->socketHandle);
 	printf("ConnectToServer: calling ConnectToWebsocket done: pcc->socketHandle = %p, pcc->hCallback = %p\n", pcc->socketHandle, pcc->hCallback);

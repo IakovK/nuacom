@@ -13,7 +13,8 @@ Notes:
 
 #include "resource.h"
 #include <initguid.h> 
-#include "..\WebsocketAPI\websocketapi.h"
+#include "../RPCClient/RPCWrapper.h"
+#include "..\nuacomsrv\websocketapi.h"
 
 
 //                                                                      
@@ -49,11 +50,11 @@ public:
 
 	DWORD                   dwDeviceID;
 
-	std::string session_token;
-	std::string extension;
-	std::string destAddress;
+	CRPCWrapper rpcw;
+	bool bConnected;
+
+	//std::string destAddress;
 	std::string localChannel;
-	void *socketHandle;
 
 	HTAPICALL               htCall;
 
@@ -64,7 +65,7 @@ public:
     DWORD                   dwMediaMode;
 
     BOOL                    bDropInProgress;
-	BOOL incomingCall;
+	BOOL bIncomingCall;
 	std::mutex mtx;
 	std::map<std::string, std::string> msgData;
 
@@ -72,35 +73,24 @@ public:
 		:htLine(NULL)
 		, pfnEventProc(NULL)
 		, dwDeviceID(0)
-		, socketHandle(NULL)
 		, htCall(NULL)
 		, dwCallState(0)
 		, dwCallStateMode(0)
 		, dwMediaMode(0)
 		, bDropInProgress(FALSE)
-		, incomingCall(FALSE)
+		, bIncomingCall(FALSE)
+		, bConnected(false)
 	{
 	}
 };
 typedef DRVLINE FAR *PDRVLINE;
-
-#define ENCRYPT_DATA 0
-#define DECRYPT_DATA 1
-struct RPCHeader
-{
-	DWORD  dwTotalSize;
-	DWORD  dwNeededSize;
-	DWORD  dwUsedSize;
-	DWORD  dwCommand;
-};
-
 
 extern DWORD gdwLineDeviceIDBase;
 extern DWORD gdwPermanentProviderID;
 extern ASYNC_COMPLETION gpfnCompletionProc;
 extern HMODULE hInst;
 extern BOOL gbHandleIncomingCalls;
-extern TUISPIDLLCALLBACK glpfnUIDLLCallback;
+extern BOOL gbIncomingCallsLocal;
 
 #if DBG
 
@@ -151,13 +141,6 @@ ConfigDlgProc(
     UINT    msg,
     WPARAM  wParam,
     LPARAM  lParam
-    );
-
-LONG
-PASCAL
-ProviderInstall(
-    char   *pszProviderName,
-    BOOL    bNoMultipleInstance
     );
 
 void
