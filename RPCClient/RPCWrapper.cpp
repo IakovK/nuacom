@@ -119,6 +119,19 @@ RPC_STATUS CRPCWrapper::Disconnect()
 		return RPC_S_OK;
 }
 
+RPC_STATUS CRPCWrapper::GetConnectionStatus(BOOL *bConnected)
+{
+	RpcTryExcept
+	{
+	::GetConnectionStatus(m_binding, bConnected);
+	}RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+	{
+		return RpcExceptionCode();
+	}
+	RpcEndExcept
+		return RPC_S_OK;
+}
+
 extern "C" void __RPC_FAR * __RPC_API MIDL_user_allocate(size_t cBytes)
 { 
     return(malloc(cBytes)); 

@@ -22,4 +22,5 @@ public:
 	RPC_STATUS MakeCall(char *address, char *statusMessage, ULONG statusMessageSize, BOOL *bSuccess);
 	RPC_STATUS Hangup(char *localChannel);
 	RPC_STATUS Disconnect();
+	RPC_STATUS GetConnectionStatus(BOOL *bConnected);
 };

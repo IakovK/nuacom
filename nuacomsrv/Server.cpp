@@ -52,6 +52,7 @@ char  szIncomingLocalFlag[] = "IncomingCallsLocal";
 char  szName[] = "username";
 char  szPassword[] = "passwordEncrypted";
 extern BOOL bDebug;
+BOOL g_bConnected = FALSE;
 
 //
 // RPC configuration.
@@ -604,6 +605,7 @@ void ConnectToServer(
 	printf("ConnectToServer: calling ConnectToWebsocket: pcc = %p, session_token = %s\n", pcc, pcc->session_token.c_str());
 	ConnectToWebsocket(pcc->session_token.c_str(), pcc, &pcc->socketHandle);
 	printf("ConnectToServer: calling ConnectToWebsocket done: pcc->socketHandle = %p, pcc->hCallback = %p\n", pcc->socketHandle, pcc->hCallback);
+	g_bConnected = TRUE;
 	*hConn = pcc;
 }
 
@@ -643,6 +645,14 @@ void Disconnect(
 	printf("Disconnect: hConn = %p, pcc->socketHandle = %p\n", hConn, pcc->socketHandle);
 	delete pcc;
 	*hConn = NULL;
+	g_bConnected = FALSE;
+}
+
+void GetConnectionStatus(
+	/* [in] */ handle_t IDL_handle,
+	/* [out] */ BOOL *bConnected)
+{
+	*bConnected = g_bConnected;
 }
 
 void __RPC_USER PCONTEXT_HANDLE_TYPE_rundown(PCONTEXT_HANDLE_TYPE hConn)

@@ -32,4 +32,5 @@ interface Nuacom
 		[in, string] char *localChannel);
 	void Disconnect([in] handle_t Binding,
 		[in, out] PPCONTEXT_HANDLE_TYPE hConn);
+	void GetConnectionStatus([out] BOOL *bConnected);
 }
