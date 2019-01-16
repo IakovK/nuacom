@@ -54,6 +54,37 @@ char  szPassword[] = "passwordEncrypted";
 extern BOOL bDebug;
 BOOL g_bConnected = FALSE;
 
+void
+CDECL
+DebugPrint(
+	LPCSTR  lpszFormat,
+	...
+)
+{
+	char    buf[512] = "NUACOMSRV: ";
+	DWORD pid = GetCurrentProcessId();
+	DWORD tid = GetCurrentThreadId();
+	va_list ap;
+
+	sprintf(buf, "NUACOMSRV(%d:%d): ", pid, tid);
+	char *newBuf = buf + strlen(buf);
+	int newbufSize = 512 - strlen(buf);
+
+	va_start(ap, lpszFormat);
+
+	_vsnprintf_s(newBuf, newbufSize, newbufSize - 1, lpszFormat, ap);
+
+
+	strncat_s(buf, sizeof(buf), "\n", 511 - strlen(buf));
+	buf[511] = '\0';
+
+	if (bDebug)
+		printf(buf);
+	else
+		OutputDebugString(buf);
+
+	va_end(ap);
+}
 //
 // RPC configuration.
 //
@@ -428,7 +459,6 @@ struct ConnectionContext : ICallbacks
 	void *socketHandle;
 	PCALLBACK_HANDLE_TYPE hCallback;
 	ULONG providerId;
-	CRPCWrapperCallback rpcw;
 
 	bool m_bInited;
 	HLINEAPP m_appHandle;
@@ -438,7 +468,6 @@ struct ConnectionContext : ICallbacks
 	ConnectionContext();
 	~ConnectionContext();
 	void SendString(const std::string &msg);
-	void SendStringTAPI(char* msg);
 	void WaitForReply(LONG requestId, int timeoutSecs);
 	virtual void OnOpenListener();
 	virtual void OnFailListener();
@@ -487,18 +516,18 @@ namespace ssio
 
 void ConnectionContext::WaitForReply(LONG requestId, int timeoutSecs)
 {
-	printf("ConnectionContext::WaitForReply: entry. requestId = %d\n", requestId);
+	DebugPrint("ConnectionContext::WaitForReply: entry. requestId = %d\n", requestId);
 	LINEMESSAGE msg;
 	while (true)
 	{
 		int n = lineGetMessage(m_appHandle, &msg, timeoutSecs * 1000);
-		printf("ConnectionContext::WaitForReply: lineGetMessage returned: %08x\n", n);
+		DebugPrint("ConnectionContext::WaitForReply: lineGetMessage returned: %08x\n", n);
 		if (n < 0)
 			break;
 		switch (msg.dwMessageID)
 		{
 		case LINE_REPLY:
-			printf("LINE_REPLY: request id = %d, result code = %08x\n", msg.dwParam1, msg.dwParam2);
+			DebugPrint("LINE_REPLY: request id = %d, result code = %08x\n", msg.dwParam1, msg.dwParam2);
 			break;
 		default:
 			break;
@@ -506,44 +535,38 @@ void ConnectionContext::WaitForReply(LONG requestId, int timeoutSecs)
 		if (msg.dwParam1 == requestId)
 			break;
 	}
-	printf("RunMessageLoop: exit\n");
+	DebugPrint("RunMessageLoop: exit\n");
 }
 
-void ConnectionContext::SendStringTAPI(char* msg)
+void ConnectionContext::SendString(const std::string &msg)
 {
-	printf("ConnectionContext::SendStringTAPI: msg.size = %d, providerId = %d, hCallback = %p\n", strlen(msg), providerId, hCallback);
+	DebugPrint("ConnectionContext::SendString: msg.size = %d, providerId = %d, hCallback = %p\n", msg.size(), providerId, hCallback);
 	HLINE lineHandle;
 	auto n = lineOpen(m_appHandle, providerId, &lineHandle, m_apiVersion, 0, (DWORD_PTR)this,
 		LINECALLPRIVILEGE_OWNER, LINEMEDIAMODE_UNKNOWN, NULL);
-	printf("ConnectionContext::SendStringTAPI: lineOpen returned: %08x\n", n);
+	DebugPrint("ConnectionContext::SendString: lineOpen returned: %08x\n", n);
 	if (n != 0)
 		return;
-	DWORD dwTotalSize = sizeof(RPCHeader) + sizeof(stringData) + strlen(msg);
+	DWORD dwTotalSize = sizeof(RPCHeader) + sizeof(stringData) + msg.size();
 	RPCHeader *h = (RPCHeader *)malloc(dwTotalSize);
 	if (h == NULL)
 		return;
 	memset(h, 0, dwTotalSize);
 	h->dwTotalSize = dwTotalSize;
 	h->dwCommand = SEND_STRING;
-	h->dwDataSize = sizeof(stringData) + strlen(msg);
+	h->dwDataSize = sizeof(stringData) + msg.size();
 	stringData *sd = (stringData *)h->data;
 	sd->callback = hCallback;
-	sd->dwDataSize = strlen(msg);
-	memcpy(sd->data, msg, sd->dwDataSize);
+	sd->dwDataSize = msg.size();
+	memcpy(sd->data, msg.data(), sd->dwDataSize);
 	n = lineDevSpecific(lineHandle, 0, NULL, h, h->dwTotalSize);
-	printf("ConnectionContext::SendStringTAPI: lineDevSpecific returned: %08x\n", n);
+	DebugPrint("ConnectionContext::SendString: lineDevSpecific returned: %08x\n", n);
 	if (n > 0)
 		WaitForReply(n, 30);
 	free(h);
+	DebugPrint("ConnectionContext::SendString: calling lineClose(lineHandle)\n");
 	lineClose(lineHandle);
-}
-
-void ConnectionContext::SendString(const std::string &msg)
-{
-	if (providerId == 0)
-		rpcw.SendString((char*)msg.c_str(), hCallback);
-	else
-		SendStringTAPI((char*)msg.c_str());
+	DebugPrint("ConnectionContext::SendString: exit\n");
 }
 
 void ConnectionContext::ProcessMessage(IMessageHolder *pmh)
@@ -557,7 +580,6 @@ void ConnectionContext::ProcessMessage(IMessageHolder *pmh)
 	doc.Accept(writer);
 	std::string msgStr = buffer.GetString();
 	SendString(msgStr);
-	RPC_STATUS status = rpcw.SendString((char*)msgStr.c_str(), hCallback);
 }
 
 void ConnectToServer(
@@ -567,7 +589,7 @@ void ConnectToServer(
 	/* [in] */ ULONG providerId,
 	/* [out] */ PPCONTEXT_HANDLE_TYPE hConn)
 {
-	printf("ConnectToServer: pszCallbackEndpoint = %s, hCallback = %p, providerId = %d\n", pszCallbackEndpoint, hCallback, providerId);
+	DebugPrint("ConnectToServer: pszCallbackEndpoint = %s, hCallback = %p, providerId = %d\n", pszCallbackEndpoint, hCallback, providerId);
 	ConnectionContext *pcc = new ConnectionContext();
 	pcc->hCallback = hCallback;
 	pcc->providerId = providerId;
@@ -585,26 +607,15 @@ void ConnectToServer(
 	bool b = nuacom::GetSessionToken(name, password, pcc->session_token);
 	if (!b)
 	{
-		printf("ConnectToServer: error in GetSessionToken: %s\n", pcc->session_token.c_str());
+		DebugPrint("ConnectToServer: error in GetSessionToken: %s\n", pcc->session_token.c_str());
 		delete pcc;
 		RpcRaiseException(RPC_S_CALL_FAILED);
 	}
 	pcc->extension = extension;
 
-	if (providerId == 0)
-	{
-		unsigned char * pszProtocolSequence = (unsigned char *)"ncalrpc";
-		RPC_STATUS status = pcc->rpcw.Init(pszProtocolSequence, pszCallbackEndpoint);
-		if (status != RPC_S_OK)
-		{
-			printf("ConnectToServer: pcc->rpcw.Init failed. status = %d", status);
-			RpcRaiseException(status);
-		}
-	}
-
-	printf("ConnectToServer: calling ConnectToWebsocket: pcc = %p, session_token = %s\n", pcc, pcc->session_token.c_str());
+	DebugPrint("ConnectToServer: calling ConnectToWebsocket: pcc = %p, session_token = %s\n", pcc, pcc->session_token.c_str());
 	ConnectToWebsocket(pcc->session_token.c_str(), pcc, &pcc->socketHandle);
-	printf("ConnectToServer: calling ConnectToWebsocket done: pcc->socketHandle = %p, pcc->hCallback = %p\n", pcc->socketHandle, pcc->hCallback);
+	DebugPrint("ConnectToServer: calling ConnectToWebsocket done: pcc->socketHandle = %p, pcc->hCallback = %p\n", pcc->socketHandle, pcc->hCallback);
 	g_bConnected = TRUE;
 	*hConn = pcc;
 }
@@ -618,11 +629,11 @@ void MakeCall(
 	/* [out] */ BOOL *bSuccess)
 {
 	ConnectionContext *pcc = (ConnectionContext *)hConn;
-	printf("MakeCall: hConn = %p, address = %s, statusMessageSize = %d, pcc->hCallback = %p\n", hConn, address, statusMessageSize, pcc->hCallback);
+	DebugPrint("MakeCall: hConn = %p, address = %s, statusMessageSize = %d, pcc->hCallback = %p\n", hConn, address, statusMessageSize, pcc->hCallback);
 	std::string status_message;
 	*bSuccess = nuacom::MakeCall(pcc->session_token, pcc->extension, (char*)address, status_message);
 	strncpy((char*)statusMessage, status_message.c_str(), statusMessageSize);
-	printf("MakeCall: after nuacom::MakeCall: *bSuccess = %d, status_message = %s\n", *bSuccess, status_message.c_str());
+	DebugPrint("MakeCall: after nuacom::MakeCall: *bSuccess = %d, status_message = %s\n", *bSuccess, status_message.c_str());
 }
 
 void Hangup(
@@ -633,7 +644,7 @@ void Hangup(
 	ConnectionContext *pcc = (ConnectionContext *)hConn;
 	std::string status_message;
 	bool b = nuacom::EndCall(pcc->session_token, (char*)localChannel, status_message);
-	printf("Hangup: hConn = %p, localChannel = %s, status_message = %s, b = %d\n", hConn, localChannel, status_message.c_str(), b);
+	DebugPrint("Hangup: hConn = %p, localChannel = %s, status_message = %s, b = %d\n", hConn, localChannel, status_message.c_str(), b);
 }
 
 void Disconnect(
@@ -642,7 +653,7 @@ void Disconnect(
 {
 	ConnectionContext *pcc = (ConnectionContext *)(*hConn);
 	CloseWebsocketAsync(pcc->socketHandle);
-	printf("Disconnect: hConn = %p, pcc->socketHandle = %p\n", hConn, pcc->socketHandle);
+	DebugPrint("Disconnect: hConn = %p, pcc->socketHandle = %p\n", hConn, pcc->socketHandle);
 	delete pcc;
 	*hConn = NULL;
 	g_bConnected = FALSE;
@@ -657,7 +668,7 @@ void GetConnectionStatus(
 
 void __RPC_USER PCONTEXT_HANDLE_TYPE_rundown(PCONTEXT_HANDLE_TYPE hConn)
 {
-	printf("PCONTEXT_HANDLE_TYPE_rundown: hConn = %p\n", hConn);
+	DebugPrint("PCONTEXT_HANDLE_TYPE_rundown: hConn = %p\n", hConn);
 	Disconnect(NULL, &hConn);
 }
 
