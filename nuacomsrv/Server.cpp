@@ -527,7 +527,7 @@ void ConnectionContext::WaitForReply(LONG requestId, int timeoutSecs)
 		switch (msg.dwMessageID)
 		{
 		case LINE_REPLY:
-			DebugPrint("LINE_REPLY: request id = %d, result code = %08x\n", msg.dwParam1, msg.dwParam2);
+			DebugPrint("ConnectionContext::WaitForReply: LINE_REPLY: request id = %d, result code = %08x\n", msg.dwParam1, msg.dwParam2);
 			break;
 		default:
 			break;
@@ -535,7 +535,7 @@ void ConnectionContext::WaitForReply(LONG requestId, int timeoutSecs)
 		if (msg.dwParam1 == requestId)
 			break;
 	}
-	DebugPrint("RunMessageLoop: exit\n");
+	DebugPrint("ConnectionContext::WaitForReply: exit\n");
 }
 
 void ConnectionContext::SendString(const std::string &msg)
@@ -560,9 +560,9 @@ void ConnectionContext::SendString(const std::string &msg)
 	sd->dwDataSize = msg.size();
 	memcpy(sd->data, msg.data(), sd->dwDataSize);
 	n = lineDevSpecific(lineHandle, 0, NULL, h, h->dwTotalSize);
-	DebugPrint("ConnectionContext::SendString: lineDevSpecific returned: %08x\n", n);
+	DebugPrint("ConnectionContext::SendString: lineDevSpecific returned: %08x(%d)\n", n, n);
 	if (n > 0)
-		WaitForReply(n, 30);
+		WaitForReply(n, 300);
 	free(h);
 	DebugPrint("ConnectionContext::SendString: calling lineClose(lineHandle)\n");
 	lineClose(lineHandle);

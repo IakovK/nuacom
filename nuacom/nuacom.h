@@ -32,6 +32,27 @@ DEFINE_GUID(CLSID_SAMPMSP,
 #define  ATSP_TIMEOUT           60000   // milliseconds
 
 
+#if DBG
+
+extern DWORD gdwDebugLevel;
+
+void
+CDECL
+DebugOutput(
+	DWORD   dwLevel,
+	LPCSTR  lpszFormat,
+	...
+);
+
+#define DBGOUT(arg) DebugOutput arg
+
+#else
+
+#define DBGOUT(arg)
+
+#endif
+
+
 class DRVLINE : public ICallbacks
 {
 public:
@@ -82,6 +103,12 @@ public:
 		, bConnected(false)
 	{
 	}
+#if DBG
+	~DRVLINE()
+	{
+		DBGOUT((3, "DRVLINE::~DRVLINE: this = %p, aborting", this));
+	}
+#endif
 };
 typedef DRVLINE FAR *PDRVLINE;
 
@@ -91,40 +118,6 @@ extern ASYNC_COMPLETION gpfnCompletionProc;
 extern HMODULE hInst;
 extern BOOL gbHandleIncomingCalls;
 extern BOOL gbIncomingCallsLocal;
-
-#if DBG
-
-extern DWORD gdwDebugLevel;
-
-void
-CDECL
-DebugOutput(
-    DWORD   dwLevel,
-    LPCSTR  lpszFormat,
-    ...
-    );
-
-#define DBGOUT(arg) DebugOutput arg
-
-#else
-
-#define DBGOUT(arg)
-
-#endif
-
-
-
-LPVOID
-PASCAL
-DrvAlloc(
-    DWORD dwSize
-    );
-
-VOID
-PASCAL
-DrvFree(
-    LPVOID lp
-    );
 
 void
 PASCAL

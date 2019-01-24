@@ -13,9 +13,6 @@ size_t write_data(char *ptr, size_t size, size_t nmemb, void *userdata)
 	return nmemb;
 }
 
-#ifdef CPPREST
-#endif
-
 bool GetSessionToken(const std::string &name, const std::string &pass, std::string &session_token)
 {
 	std::string hash = md5(pass.c_str());
