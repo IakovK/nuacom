@@ -99,6 +99,7 @@ extern DWORD gdwPermanentProviderID;
 extern ASYNC_COMPLETION gpfnCompletionProc;
 extern HMODULE hInst;
 extern BOOL gbHandleIncomingCalls;
+extern BOOL gbIncomingCallsLocal;
 extern TUISPIDLLCALLBACK glpfnUIDLLCallback;
 
 #if DBG

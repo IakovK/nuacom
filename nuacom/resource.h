@@ -10,6 +10,8 @@
 #define IDC_LINESLIST                   1008
 #define IDC_INCOMING                    1009
 #define IDC_INDEX                       1010
+#define IDC_INCOMING2                   1010
+#define IDC_INCOMINGLOCAL               1010
 #define IDC_EXTENSION                   1011
 #define IDC_USERNAME                    1012
 #define IDC_PASSWORD                    1013

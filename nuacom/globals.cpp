@@ -2,7 +2,8 @@
 #include "nuacom.h"
 
 DWORD gdwDebugLevel = 0;
-BOOL gbHandleIncomingCalls;
+BOOL gbHandleIncomingCalls = FALSE;
+BOOL gbIncomingCallsLocal = FALSE;
 HMODULE hInst = NULL;
 DWORD gdwLineDeviceIDBase = 0;
 DWORD gdwPermanentProviderID = 0;

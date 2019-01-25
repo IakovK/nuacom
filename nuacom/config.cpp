@@ -4,8 +4,11 @@
 
 char  szAtsp32DebugLevel[] = "DebugLevel";
 char  szIncomingFlag[] = "HandleIncomingCalls";
+char  szIncomingLocalFlag[] = "IncomingCallsLocal";
 char  szRegKey[] = "Software\\Nuacom\\TSP";
 char  szLinesRegKey[] = "Software\\Nuacom\\TSP\\Lines";
+char  szName[] = "username";
+char  szPassword[] = "passwordEncrypted";
 
 #define HEADING_ID "Line id"
 #define HEADING_EXTENSION "Extension"
@@ -103,6 +106,15 @@ void GetIncomingFlag()
 		&dwDataSize
 	);
 
+	n = RegQueryValueEx(
+		hKey,
+		szIncomingLocalFlag,
+		0,
+		&dwDataType,
+		(LPBYTE)&gbIncomingCallsLocal,
+		&dwDataSize
+	);
+
 	RegCloseKey(hKey);
 }
 
@@ -126,6 +138,15 @@ static void SaveIncomingFlag()
 		0,
 		REG_DWORD,
 		(LPBYTE)&gbHandleIncomingCalls,
+		4
+	);
+
+	n = RegSetValueEx(
+		hKey,
+		szIncomingLocalFlag,
+		0,
+		REG_DWORD,
+		(LPBYTE)&gbIncomingCallsLocal,
 		4
 	);
 
@@ -226,7 +247,7 @@ linesCollection GetLinesInfo()
 		dataSize = MAX_DEV_NAME_LENGTH;
 		n = RegQueryValueEx(
 			lv1.hKeyLine,
-			"username",
+			szName,
 			0,
 			&dataType,
 			(LPBYTE)data,
@@ -243,7 +264,7 @@ linesCollection GetLinesInfo()
 		dataSize = MAX_DEV_NAME_LENGTH;
 		n = RegQueryValueEx(
 			lv1.hKeyLine,
-			"passwordEncrypted",
+			szPassword,
 			0,
 			&dataType,
 			NULL,
@@ -258,7 +279,7 @@ linesCollection GetLinesInfo()
 		std::vector<BYTE> d1(dataSize);
 		n = RegQueryValueEx(
 			lv1.hKeyLine,
-			"passwordEncrypted",
+			szPassword,
 			0,
 			&dataType,
 			d1.data(),
@@ -341,6 +362,7 @@ DialogProc(HWND hwnd,
 	{
 		HWND hWndList = GetDlgItem(hwnd, IDC_LINESLIST);
 		HWND hWndCheck = GetDlgItem(hwnd, IDC_INCOMING);
+		HWND hWndCheck1 = GetDlgItem(hwnd, IDC_INCOMINGLOCAL);
 		switch (LOWORD((DWORD)wParam))
 		{
 		case IDOK:
@@ -352,6 +374,13 @@ DialogProc(HWND hwnd,
 		{
 			auto a = Button_GetCheck(hWndCheck);
 			gbHandleIncomingCalls = (a == BST_CHECKED);
+			SaveIncomingFlag();
+			return TRUE;
+		}
+		case IDC_INCOMINGLOCAL:
+		{
+			auto a = Button_GetCheck(hWndCheck);
+			gbIncomingCallsLocal = (a == BST_CHECKED);
 			SaveIncomingFlag();
 			return TRUE;
 		}
@@ -587,7 +616,7 @@ void SaveItem(const std::string &index, const LineInfo &li)
 	// RegSetValue username
 	n = RegSetValueEx(
 		lv.hKeyLine,
-		"username",
+		szName,
 		0,
 		REG_SZ,
 		(LPBYTE)li.userName.c_str(),
@@ -602,7 +631,7 @@ void SaveItem(const std::string &index, const LineInfo &li)
 	// RegSetValue passwordEncrypted
 	n = RegSetValueEx(
 		lv.hKeyLine,
-		"passwordEncrypted",
+		szPassword,
 		0,
 		REG_BINARY,
 		(LPBYTE)passwordEncrypted.data(),
