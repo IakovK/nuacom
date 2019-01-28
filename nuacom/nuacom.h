@@ -65,6 +65,10 @@ public:
 	DWORD CalculateCallInfoSize();
 	bool ConnectToServer();
 
+	void StartWatchdogThread();
+	void WaitForMessage(int timeoutInSec);
+	HANDLE m_hEvent;
+
 	HTAPILINE               htLine;
 
     LINEEVENT               pfnEventProc;
@@ -72,6 +76,7 @@ public:
 	DWORD                   dwDeviceID;
 
 	CRPCWrapper rpcw;
+	std::thread wdThread;
 	bool bConnected;
 
 	//std::string destAddress;
@@ -102,6 +107,7 @@ public:
 		, bIncomingCall(FALSE)
 		, bConnected(false)
 	{
+		m_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	}
 #if DBG
 	~DRVLINE()
