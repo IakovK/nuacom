@@ -587,9 +587,10 @@ void ConnectToServer(
 	/* [string][in] */ unsigned char *pszCallbackEndpoint,
 	/* [in] */ PCALLBACK_HANDLE_TYPE hCallback,
 	/* [in] */ ULONG providerId,
+	/* [in] */ BOOL ConnectToWS,
 	/* [out] */ PPCONTEXT_HANDLE_TYPE hConn)
 {
-	DebugPrint("ConnectToServer: pszCallbackEndpoint = %s, hCallback = %p, providerId = %d\n", pszCallbackEndpoint, hCallback, providerId);
+	DebugPrint("ConnectToServer: pszCallbackEndpoint = %s, hCallback = %p, providerId = %d, ConnectToWS = %d\n", pszCallbackEndpoint, hCallback, providerId, ConnectToWS);
 	ConnectionContext *pcc = new ConnectionContext();
 	pcc->hCallback = hCallback;
 	pcc->providerId = providerId;
@@ -613,10 +614,14 @@ void ConnectToServer(
 	}
 	pcc->extension = extension;
 
-	DebugPrint("ConnectToServer: calling ConnectToWebsocket: pcc = %p, session_token = %s\n", pcc, pcc->session_token.c_str());
-	ConnectToWebsocket(pcc->session_token.c_str(), pcc, &pcc->socketHandle);
-	DebugPrint("ConnectToServer: calling ConnectToWebsocket done: pcc->socketHandle = %p, pcc->hCallback = %p\n", pcc->socketHandle, pcc->hCallback);
-	g_bConnected = TRUE;
+	if (ConnectToWS)
+	{
+		DebugPrint("ConnectToServer: calling ConnectToWebsocket: pcc = %p, session_token = %s\n", pcc, pcc->session_token.c_str());
+		ConnectToWebsocket(pcc->session_token.c_str(), pcc, &pcc->socketHandle);
+		DebugPrint("ConnectToServer: calling ConnectToWebsocket done: pcc->socketHandle = %p, pcc->hCallback = %p\n", pcc->socketHandle, pcc->hCallback);
+		g_bConnected = TRUE;
+	}
+
 	*hConn = pcc;
 }
 
