@@ -67,6 +67,7 @@ public:
 
 	void StartWatchdogThread();
 	void WaitForMessage(int timeoutInSec);
+	void DisconnectAndDeleteSelf();
 	HANDLE m_hEvent;
 
 	HTAPILINE               htLine;
@@ -77,6 +78,7 @@ public:
 
 	CRPCWrapper rpcw;
 	std::thread wdThread;
+	std::thread disconnectThread;
 	bool bConnected;
 
 	//std::string destAddress;
