@@ -67,7 +67,6 @@ public:
 
 	void StartWatchdogThread();
 	void WaitForMessage(int timeoutInSec);
-	void DisconnectAndDeleteSelf();
 	HANDLE m_hEvent;
 
 	HTAPILINE               htLine;
@@ -78,7 +77,6 @@ public:
 
 	CRPCWrapper rpcw;
 	std::thread wdThread;
-	std::thread disconnectThread;
 	bool bConnected;
 
 	//std::string destAddress;
@@ -97,26 +95,8 @@ public:
 	std::mutex mtx;
 	std::map<std::string, std::string> msgData;
 
-	DRVLINE()
-		:htLine(NULL)
-		, pfnEventProc(NULL)
-		, dwDeviceID(0)
-		, htCall(NULL)
-		, dwCallState(0)
-		, dwCallStateMode(0)
-		, dwMediaMode(0)
-		, bDropInProgress(FALSE)
-		, bIncomingCall(FALSE)
-		, bConnected(false)
-	{
-		m_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	}
-#if DBG
-	~DRVLINE()
-	{
-		DBGOUT((3, "DRVLINE::~DRVLINE: this = %p, aborting", this));
-	}
-#endif
+	DRVLINE();
+	~DRVLINE();
 };
 typedef DRVLINE FAR *PDRVLINE;
 
