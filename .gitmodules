@@ -1,0 +1,3 @@
+[submodule "sioclient"]
+	path = sioclient
+	url = https://github.com/IakovK/secure-socket.io-client-cpp
